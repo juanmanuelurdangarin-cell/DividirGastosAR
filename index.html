@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DivideGastos Fix</title>
+<title>DivideGastos Pro</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-  :root { --primary: #6c63ff; --bg: #f0f2f8; --text: #2d3142; }
-  body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; }
-  .screen { display: none; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+  :root { --primary: #6c63ff; --accent: #ff6584; --bg: #f0f2f8; --text: #2d3142; }
+  body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; }
+  .screen { display: none; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
   .screen.active { display: flex; }
-  #debug-console { position: fixed; bottom: 0; left: 0; right: 0; background: #000; color: #0f0; font-family: monospace; font-size: 11px; padding: 10px; max-height: 120px; overflow-y: auto; z-index: 1000; opacity: 0.9; }
-  .btn-google { padding: 15px 25px; background: white; border: 2px solid #ddd; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+  .btn-google { padding: 15px 25px; background: white; border: 2px solid #ddd; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 10px; }
   .app-header { background: white; width: 100%; padding: 15px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; position: fixed; top: 0; box-sizing: border-box; }
+  .user-photo { width: 35px; height: 35px; border-radius: 50%; }
 </style>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -20,41 +20,36 @@
 </head>
 <body>
 
-  <div id="debug-console">Iniciando sistema de diagnóstico...</div>
-
   <div id="screen-loading" class="screen active">
-    <i class="fa-solid fa-sync fa-spin fa-3x" style="color:var(--primary)"></i>
-    <p style="margin-top:20px">Sincronizando con Google...</p>
+    <i class="fa-solid fa-circle-notch fa-spin fa-3x" style="color:var(--primary)"></i>
   </div>
 
   <div id="screen-onboarding" class="screen">
     <i class="fa-solid fa-receipt fa-4x" style="color:var(--primary); margin-bottom:20px"></i>
     <h1>DivideGastos</h1>
-    <p style="color:#666; margin-bottom:30px">Presioná el botón para ingresar</p>
+    <p style="color:#666; margin-bottom:30px">Ingresá para gestionar tus cuentas</p>
     <button class="btn-google" onclick="login()">
       <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" width="20">
-      Entrar con Google
+      Continuar con Google
     </button>
   </div>
 
   <div id="screen-main" class="screen">
     <header class="app-header">
-      <span id="user-display">Cargando...</span>
-      <button onclick="logout()" style="border:none; background:none; color:red; font-weight:bold">Cerrar Sesión</button>
+      <div style="display:flex; align-items:center; gap:10px">
+        <img id="user-photo" class="user-photo" src="">
+        <span id="user-name">Usuario</span>
+      </div>
+      <button onclick="logout()" style="border:none; background:none; color:var(--accent); font-weight:bold">Salir</button>
     </header>
-    <i class="fa-solid fa-check-circle fa-4x" style="color:green; margin-bottom:20px"></i>
-    <h2>¡Acceso Correcto!</h2>
-    <p id="user-email"></p>
+    <div style="text-align:center">
+      <i class="fa-solid fa-face-smile fa-4x" style="color:var(--primary); margin-bottom:20px"></i>
+      <h2>¡Ya estás adentro!</h2>
+      <p id="user-email" style="color:#666"></p>
+    </div>
   </div>
 
   <script>
-    const debug = (msg) => {
-      const el = document.getElementById('debug-console');
-      el.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
-      el.scrollTop = el.scrollHeight;
-      console.log(msg);
-    };
-
     const firebaseConfig = {
       apiKey: "AIzaSyApUtaEOhMGQFMrHIzaypRX_GLx2cace_A",
       authDomain: "dividirgastosar.firebaseapp.com",
@@ -64,60 +59,47 @@
       appId: "1:1073347556736:web:d98c2c848cf73c7148bd65"
     };
 
+    let auth;
+
     function showScreen(id) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       document.getElementById('screen-' + id).classList.add('active');
     }
 
     function init() {
-      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-      const auth = firebase.auth();
-      
-      debug("Firebase listo. Verificando persistencia...");
+      firebase.initializeApp(firebaseConfig);
+      auth = firebase.auth();
 
-      // Forzar que la sesión se guarde localmente pase lo que pase
-      auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
-        
-        // El observador es el que manda
-        auth.onAuthStateChanged((user) => {
-          if (user) {
-            debug("¡USUARIO DETECTADO!: " + user.email);
-            document.getElementById('user-display').innerText = user.displayName;
-            document.getElementById('user-email').innerText = user.email;
-            showScreen('main');
-          } else {
-            debug("No hay sesión activa.");
-            // Antes de mostrar login, vemos si estamos volviendo de un redirect
-            auth.getRedirectResult().then(result => {
-               if (!result.user) {
-                 debug("No se encontró usuario en el redirect. Al login.");
-                 showScreen('onboarding');
-               }
-            }).catch(e => {
-               debug("Error en redirect result: " + e.message);
-               showScreen('onboarding');
-            });
-          }
-        });
+      // Escuchamos el estado del usuario
+      auth.onAuthStateChanged((user) => {
+        if (user) {
+          console.log("Sesión activa:", user.displayName);
+          document.getElementById('user-name').innerText = user.displayName;
+          document.getElementById('user-email').innerText = user.email;
+          document.getElementById('user-photo').src = user.photoURL;
+          showScreen('main');
+        } else {
+          showScreen('onboarding');
+        }
       });
     }
 
-    function login() {
-      debug("Redirigiendo a Google...");
+    async function login() {
       const provider = new firebase.auth.GoogleAuthProvider();
-      // Esto ayuda a que el navegador no "olvide" la operación al redirigir
-      firebase.auth().signInWithRedirect(provider);
+      try {
+        // CAMBIO CLAVE: Usamos Popup en lugar de Redirect
+        await auth.signInWithPopup(provider);
+      } catch (error) {
+        console.error("Error en login:", error);
+        alert("No se pudo iniciar sesión: " + error.message);
+      }
     }
 
     function logout() {
-      firebase.auth().signOut().then(() => {
-        debug("Sesión cerrada.");
-        window.location.reload();
-      });
+      auth.signOut().then(() => window.location.reload());
     }
 
-    // Usamos DOMContentLoaded para asegurar que todo el HTML esté listo
-    document.addEventListener('DOMContentLoaded', init);
+    window.onload = init;
   </script>
 </body>
 </html>
