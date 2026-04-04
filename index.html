@@ -53,29 +53,10 @@
   .onboarding-title { text-align: center; font-size: 1.7rem; font-weight: 800; color: var(--text); margin-bottom: 4px; }
   .onboarding-title span { color: var(--primary); }
   .onboarding-subtitle { text-align: center; color: var(--text-muted); font-size: .93rem; margin-bottom: 28px; min-height: 40px; }
-  .form-group { margin-bottom: 18px; }
-  .form-group label { display: block; font-size: .82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 7px; }
-  .form-group select { width: 100%; padding: 13px 16px; border: 2px solid var(--border); border-radius: var(--radius-sm); font-size: 1rem; color: var(--text); background: var(--bg); outline: none; transition: border-color var(--transition); appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236c63ff' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
-  .form-group select:focus { border-color: var(--primary); }
-  .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: var(--text-muted); font-size: .82rem; }
-  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-  .btn-primary { width: 100%; padding: 15px; background: linear-gradient(135deg,var(--primary),var(--primary-dark)); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 1.05rem; font-weight: 700; cursor: pointer; transition: transform var(--transition), box-shadow var(--transition); box-shadow: 0 4px 15px rgba(108,99,255,0.35); margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-  .btn-primary:active { transform: scale(0.97); }
-  .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
   .btn-google { width: 100%; padding: 14px; background: #fff; color: var(--text); border: 2px solid var(--border); border-radius: var(--radius-sm); font-size: 1rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; transition: all var(--transition); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
   .btn-google:hover { border-color: #4285f4; box-shadow: 0 4px 16px rgba(66,133,244,0.2); }
   .btn-google:active { transform: scale(0.97); }
   .btn-google img { width: 22px; height: 22px; }
-
-  /* ══ FIREBASE CONFIG SCREEN ══ */
-  #screen-firebase-config { background: linear-gradient(145deg,#6c63ff,#a78bfa,#ff6584); justify-content: center; align-items: center; padding: 24px; }
-  .firebase-card { background: #fff; border-radius: 24px; padding: 28px 24px; width: 100%; max-width: 440px; box-shadow: 0 20px 60px rgba(0,0,0,0.18); }
-  .firebase-card h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: 6px; }
-  .firebase-card p { font-size: .85rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; }
-  .config-field { margin-bottom: 12px; }
-  .config-field label { display: block; font-size: .75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px; }
-  .config-field input { width: 100%; padding: 10px 12px; border: 2px solid var(--border); border-radius: 8px; font-size: .85rem; color: var(--text); background: var(--bg); outline: none; font-family: monospace; }
-  .config-field input:focus { border-color: var(--primary); }
 </style>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -104,39 +85,21 @@
         <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google">
         Continuar con Google
       </button>
-      
-      <div class="divider">o bien</div>
-      
-      <button class="btn-primary" onclick="showScreen('firebase-config')">
-        <i class="fa-solid fa-gear"></i> Configurar Firebase
-      </button>
-    </div>
-  </div>
-
-  <div id="screen-firebase-config" class="screen">
-    <div class="firebase-card">
-      <h2>⚙️ Configurar Firebase</h2>
-      <p>Ingresá tus credenciales para conectar la base de datos.</p>
-      
-      <div class="config-field">
-        <label>API Key</label>
-        <input type="text" id="fb-apiKey" placeholder="AIzaSy...">
-      </div>
-      <div class="config-field">
-        <label>Auth Domain</label>
-        <input type="text" id="fb-authDomain" placeholder="tu-app.firebaseapp.com">
-      </div>
-      <div class="config-field">
-        <label>Project ID</label>
-        <input type="text" id="fb-projectId" placeholder="tu-app-id">
-      </div>
-      
-      <button class="btn-primary" onclick="saveFirebaseConfig()">Guardar y Conectar</button>
-      <button class="btn-google" style="margin-top: 10px;" onclick="showScreen('onboarding')">Volver</button>
     </div>
   </div>
 
   <script>
+    // Credenciales integradas del proyecto
+    const firebaseConfig = {
+      apiKey: "AIzaSyApUtaEOhMGQFMrHIzaypRX_GLx2cace_A",
+      authDomain: "dividirgastosar.firebaseapp.com",
+      projectId: "dividirgastosar",
+      storageBucket: "dividirgastosar.firebasestorage.app",
+      messagingSenderId: "1073347556736",
+      appId: "1:1073347556736:web:d98c2c848cf73c7148bd65",
+      measurementId: "G-ZJ1HMDPKFZ"
+    };
+
     const state = {
       user: null,
       history: []
@@ -167,7 +130,7 @@
         db = firebase.firestore();
         auth = firebase.auth();
         
-        // MANEJAR EL RESULTADO DE LA REDIRECCIÓN
+        // Manejar el resultado de la redirección al volver de Google
         auth.getRedirectResult().then((result) => {
           if (result.user) {
             state.user = result.user;
@@ -180,7 +143,7 @@
           showScreen("onboarding");
         });
 
-        // ESCUCHAR CAMBIOS DE ESTADO DE AUTENTICACIÓN
+        // Escuchar cambios de estado
         auth.onAuthStateChanged(user => {
           if (user) {
             state.user = user;
@@ -200,14 +163,12 @@
 
     async function signInWithGoogle() {
       if (!auth) {
-        showToast("Primero debés configurar Firebase");
-        showScreen("firebase-config");
+        showToast("Error de inicialización de Auth");
         return;
       }
       const provider = new firebase.auth.GoogleAuthProvider();
       try {
         showScreen("loading");
-        // Cambiado de popup a redirección para evitar bloqueos
         await auth.signInWithRedirect(provider);
       } catch (error) {
         console.error("Error en login:", error);
@@ -225,55 +186,20 @@
           .get();
         
         state.history = snapshot.docs.map(doc => doc.data());
-        renderHistory();
         console.log("Datos cargados:", state.history);
         
-        // Como no hay una pantalla principal definida en tu base, de momento nos quedamos cargando.
-        // Aquí deberías redirigir a la pantalla de menú o historial con showScreen('nombre');
+        // Aquí te quedarás en pantalla de carga porque no hay nada más maquetado todavía.
       } catch (e) {
         console.error("Error cargando datos:", e);
         showToast("Error al cargar los datos");
       }
     }
 
-    function renderHistory() {
-      console.log("Renderizando historial...");
-    }
-
-    function saveFirebaseConfig() {
-      const config = {
-        apiKey: document.getElementById('fb-apiKey').value.trim(),
-        authDomain: document.getElementById('fb-authDomain').value.trim(),
-        projectId: document.getElementById('fb-projectId').value.trim()
-      };
-      
-      if (!config.apiKey || !config.authDomain || !config.projectId) {
-        showToast("Por favor, completá todos los campos.");
-        return;
-      }
-      
-      localStorage.setItem('firebaseConfig', JSON.stringify(config));
-      const ok = initFirebase(config);
-      if (ok) {
-        showToast("Configuración guardada con éxito");
-      }
-    }
-
-    function loadFromStorage() {
-      const storedConfig = localStorage.getItem('firebaseConfig');
-      if (storedConfig) {
-        const config = JSON.parse(storedConfig);
-        initFirebase(config);
-      } else {
-        setTimeout(() => showScreen("onboarding"), 1500);
-      }
-    }
-
     // ══════════════════════════════════════════════════════════
-    //  BOOT (ARRANQUE)
+    //  BOOT (ARRANQUE AUTOMÁTICO)
     // ══════════════════════════════════════════════════════════
     (function boot() {
-      loadFromStorage();
+      initFirebase(firebaseConfig);
     })();
   </script>
 </body>
