@@ -245,6 +245,9 @@
     .pedidosya-banner { border-radius: 16px 16px 0 0; max-width: 520px; left: 50%; transform: translateX(-50%); }
   }
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
@@ -1392,28 +1395,102 @@ document.querySelectorAll(".modal-overlay").forEach(o=>{
 });
 
 // ══════════════════════════════════════════════════════════
-//  BOOT
+//  CONFIGURACIÓN DE FIREBASE (TUS DATOS)
+// ══════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyApUtaEOhMGQFMrHIzaypRX_GLx2cace_A",
+  authDomain: "dividirgastosar.firebaseapp.com",
+  projectId: "dividirgastosar",
+  storageBucket: "dividirgastosar.firebasestorage.app",
+  messagingSenderId: "1073347556736",
+  appId: "1:1073347556736:web:294777f0a4a2d25548bd65",
+  measurementId: "G-2D1WKFMJ1W"
+};
+
+let auth, db;
+
+// ══════════════════════════════════════════════════════════
+//  LÓGICA DE AUTENTICACIÓN
+// ══════════════════════════════════════════════════════════
+
+function initFirebase(config) {
+  try {
+    if (!firebase.apps.length) {
+      firebase.initializeApp(config);
+    }
+    auth = firebase.auth();
+    db = firebase.firestore();
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        state.user = {
+          uid: user.uid,
+          name: user.displayName,
+          email: user.email,
+          photo: user.photoURL
+        };
+        state.localMode = false;
+        // Al loguearse, intentamos cargar sus eventos de la nube
+        loadEventsFromCloud();
+      } else {
+        state.user = null;
+        if (!state.localMode) showScreen("onboarding");
+      }
+    });
+    return true;
+  } catch(e) {
+    console.error("Error Firebase:", e);
+    return false;
+  }
+}
+
+async function signInWithGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  try {
+    showScreen("loading");
+    await auth.signInWithPopup(provider);
+    showToast("¡Bienvenido!");
+  } catch (error) {
+    console.error("Error en login:", error);
+    showToast("Error al iniciar sesión");
+    showScreen("onboarding");
+  }
+}
+
+async function loadEventsFromCloud() {
+  if (!state.user || !db) return;
+  try {
+    const snapshot = await db.collection("events")
+      .where("userId", "==", state.user.uid)
+      .get();
+    
+    state.history = snapshot.docs.map(doc => doc.data());
+    renderHistory();
+    showScreen("history");
+  } catch (e) {
+    console.error("Error cargando datos:", e);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  BOOT (ARRANQUE MODIFICADO)
 // ══════════════════════════════════════════════════════════
 (function boot() {
   loadFromStorage();
-  const fbConfig = getFirebaseConfig();
-  if (fbConfig) {
-    const ok = initFirebase(fbConfig);
-    if (!ok) { showScreen("firebase"); }
-    // onAuthStateChanged will handle the rest
-    // Show loading while waiting
+  
+  // Inicializamos directamente con tu configuración
+  const ok = initFirebase(firebaseConfig);
+  
+  if (ok) {
     showScreen("loading");
-    setTimeout(()=>{ if(document.getElementById("screen-loading").classList.contains("active")) checkInitFlow(); }, 4000);
+    // El onAuthStateChanged se encarga de redirigir al entrar
   } else {
-    // No Firebase → check if we have local prefs
+    // Si falla Firebase, entra en modo local
     if (state.lang && state.country) {
       state.localMode = true;
-      applyI18nGlobal();
-      goHistory();
+      showScreen("history");
     } else {
       showScreen("onboarding");
-      document.getElementById("ob-google-section").style.display = "none";
-      applyI18nOnboarding();
     }
   }
 })();
