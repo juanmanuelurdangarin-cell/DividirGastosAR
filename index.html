@@ -5,78 +5,64 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>DivideGastos Pro</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+
 <style>
   :root {
-    --bg: #0d0f14;
-    --surface: #161920;
-    --surface2: #1e2230;
-    --border: #2a2f40;
-    --accent: #6c63ff;
-    --accent2: #ff6584;
-    --green: #1de9b6;
-    --red: #ff6584;
-    --text: #e8eaf0;
-    --muted: #7a7f99;
-    --radius: 16px;
-    --radius-sm: 10px;
-    --pedidosya: #ff0045;
+    --bg: #0d0f14; --surface: #161920; --surface2: #1e2230; --border: #2a2f40;
+    --accent: #6c63ff; --accent2: #ff6584; --green: #1de9b6; --red: #ff6584;
+    --text: #e8eaf0; --muted: #7a7f99; --radius: 16px;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; overflow-x: hidden; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
 
-  /* --- SCREENS --- */
+  /* --- ESTRUCTURA --- */
   .screen { display: none; min-height: 100vh; flex-direction: column; animation: fadeIn 0.3s ease; }
   .screen.active { display: flex; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-  /* --- ONBOARDING / LOGIN --- */
-  #screen-onboarding { justify-content: center; align-items: center; padding: 30px; text-align: center; background: radial-gradient(circle at top right, #1e1e30, var(--bg)); }
-  .login-card { background: var(--surface); border: 1px solid var(--border); padding: 40px 30px; border-radius: 24px; width: 100%; max-width: 400px; }
-  .logo-icon { font-size: 3.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px; }
-  .btn-google { width: 100%; padding: 16px; background: white; color: #1a1a1a; border: none; border-radius: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer; transition: 0.2s; margin-top: 30px; }
-  .btn-google:active { transform: scale(0.97); }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; } }
 
   /* --- HEADER --- */
-  header { padding: 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: rgba(13,15,20,0.8); backdrop-filter: blur(10px); z-index: 100; border-bottom: 1px solid var(--border); }
-  .user-badge { display: flex; align-items: center; gap: 10px; background: var(--surface); padding: 6px 14px 6px 6px; border-radius: 40px; border: 1px solid var(--border); }
-  .user-badge img { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--accent); }
-  .btn-logout { background: none; border: none; color: var(--red); font-size: 1.2rem; cursor: pointer; padding: 5px; }
+  header { 
+    padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; 
+    position: sticky; top: 0; background: rgba(13,15,20,0.9); backdrop-filter: blur(12px); 
+    z-index: 100; border-bottom: 1px solid var(--border);
+  }
+  .user-info { display: flex; align-items: center; gap: 10px; background: var(--surface); padding: 5px 12px 5px 5px; border-radius: 30px; border: 1px solid var(--border); }
+  .user-info img { width: 28px; height: 28px; border-radius: 50%; }
 
-  /* --- APP CONTENT (Basado en tu archivo .txt) --- */
-  .container { padding: 20px; flex: 1; max-width: 600px; margin: 0 auto; width: 100%; }
-  h2 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.6rem; margin-bottom: 20px; }
-  
-  .history-list { display: flex; flex-direction: column; gap: 12px; }
-  .event-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
-  .event-card:active { background: var(--surface2); transform: scale(0.98); }
-  .event-name { font-weight: 600; font-size: 1.1rem; color: var(--text); }
-  .event-meta { font-size: 0.85rem; color: var(--muted); }
-  .event-total { font-weight: 700; color: var(--accent); }
+  /* --- LISTADO EVENTOS --- */
+  .container { padding: 20px; max-width: 600px; margin: 0 auto; width: 100%; flex: 1; }
+  .event-card { 
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); 
+    padding: 20px; margin-bottom: 15px; cursor: pointer; transition: 0.2s; position: relative;
+    overflow: hidden;
+  }
+  .event-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent); }
+  .event-card.shared::before { background: var(--accent2); }
+  .event-card:active { transform: scale(0.98); background: var(--surface2); }
+  .event-owner { font-size: 0.75rem; color: var(--muted); margin-bottom: 5px; }
 
-  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
-  .empty-state i { font-size: 3rem; margin-bottom: 15px; opacity: 0.3; }
+  /* --- TABS --- */
+  .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: var(--surface); padding: 5px; border-radius: 12px; }
+  .tab { flex: 1; padding: 10px; text-align: center; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: var(--muted); transition: 0.2s; }
+  .tab.active { background: var(--accent); color: white; }
 
-  /* BOTÓN FLOTANTE */
-  .fab { position: fixed; bottom: 30px; right: 25px; width: 60px; height: 60px; background: var(--accent); color: white; border-radius: 50%; border: none; font-size: 24px; box-shadow: 0 8px 24px rgba(108,99,255,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 90; }
-
-  /* LOADING */
-  #screen-loading { justify-content: center; align-items: center; background: var(--bg); }
-  .spinner { width: 45px; height: 45px; border: 4px solid var(--surface2); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* MODALES (Simplificados para esta versión) */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: flex-end; z-index: 1000; }
+  /* --- MODALES --- */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: flex-end; z-index: 1000; }
   .modal-overlay.open { display: flex; }
-  .modal { background: var(--surface); width: 100%; border-radius: 24px 24px 0 0; padding: 30px 20px; animation: slideUp 0.3s ease; }
-  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-  .input-group { margin-bottom: 20px; }
-  label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 0.9rem; }
-  input { width: 100%; background: var(--surface2); border: 1px solid var(--border); padding: 15px; border-radius: var(--radius-sm); color: white; font-size: 1rem; outline: none; }
-  input:focus { border-color: var(--accent); }
-  .btn-primary { width: 100%; padding: 16px; background: var(--accent); color: white; border: none; border-radius: 14px; font-weight: 700; cursor: pointer; }
+  .modal { background: var(--surface); width: 100%; border-radius: 24px 24px 0 0; padding: 30px 20px; max-height: 90vh; overflow-y: auto; }
+  input, select { width: 100%; background: var(--surface2); border: 1px solid var(--border); padding: 15px; border-radius: 12px; color: white; margin-bottom: 15px; font-size: 1rem; }
 
+  /* BOTONES */
+  .btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-weight: 700; cursor: pointer; font-size: 1rem; transition: 0.2s; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-outline { background: none; border: 1px solid var(--border); color: var(--text); }
+  .fab { position: fixed; bottom: 30px; right: 25px; width: 60px; height: 60px; background: var(--accent); color: white; border-radius: 50%; border: none; font-size: 24px; box-shadow: 0 8px 24px rgba(108,99,255,0.4); z-index: 90; display: flex; align-items: center; justify-content: center; }
+
+  /* HISTORIAL LOG */
+  .log-item { font-size: 0.85rem; padding: 10px 0; border-bottom: 1px solid var(--border); color: var(--muted); }
+  .log-item b { color: var(--text); }
 </style>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -86,52 +72,77 @@
 <body>
 
   <div id="screen-loading" class="screen active">
-    <div class="spinner"></div>
+    <div style="margin: auto; text-align: center;">
+      <div class="spinner" style="width:50px; height:50px; border:4px solid var(--surface2); border-top-color:var(--accent); border-radius:50%; animation:spin 1s linear infinite;"></div>
+    </div>
   </div>
 
   <div id="screen-onboarding" class="screen">
-    <div class="login-card">
-      <div class="logo-icon"><i class="fa-solid fa-receipt"></i></div>
-      <h1 style="font-family:'Syne'; font-weight:800; font-size:2rem">DivideGastos</h1>
-      <p style="color:var(--muted)">La forma pro de repartir deudas</p>
-      <button class="btn-google" onclick="login()">
-        <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" width="20">
-        Continuar con Google
+    <div style="margin: auto; width: 90%; max-width: 400px; text-align: center; padding: 40px; background: var(--surface); border-radius: 24px;">
+      <i class="fa-solid fa-receipt fa-4x" style="color: var(--accent); margin-bottom: 20px;"></i>
+      <h1 style="font-family:'Syne'; font-size: 2.2rem; margin-bottom: 10px;">DivideGastos</h1>
+      <p style="color: var(--muted); margin-bottom: 30px;">Cuentas claras en tiempo real.</p>
+      <button class="btn btn-primary" onclick="login()" style="background: white; color: #000; display: flex; align-items: center; justify-content: center; gap: 10px;">
+        <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" width="20"> Continuar con Google
       </button>
     </div>
   </div>
 
   <div id="screen-main" class="screen">
     <header>
-      <div class="user-badge">
-        <img id="user-photo" src="" alt="">
+      <div class="user-info">
+        <img id="user-photo" src="">
         <span id="user-name">Usuario</span>
       </div>
-      <button class="btn-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i></button>
+      <button onclick="logout()" style="background:none; border:none; color:var(--red); font-size: 1.2rem;"><i class="fa-solid fa-sign-out-alt"></i></button>
     </header>
 
     <div class="container">
-      <h2>Mis Eventos</h2>
-      <div id="event-list" class="history-list">
+      <h2 style="font-family:'Syne'; margin-bottom: 20px;">Mis Eventos</h2>
+      <div id="event-list">
         </div>
     </div>
+    <button class="fab" onclick="openModal('modal-new-event')"><i class="fa-solid fa-plus"></i></button>
+  </div>
 
-    <button class="fab" onclick="openNewEventModal()"><i class="fa-solid fa-plus"></i></button>
+  <div id="screen-detail" class="screen">
+    <header>
+      <button onclick="showScreen('main')" style="background:none; border:none; color:white;"><i class="fa-solid fa-arrow-left"></i></button>
+      <h3 id="detail-title" style="font-family:'Syne';">Evento</h3>
+      <button onclick="shareEvent()" style="background:none; border:none; color:var(--accent);"><i class="fa-solid fa-user-plus"></i></button>
+    </header>
+
+    <div class="container">
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('gastos')">Gastos</div>
+        <div class="tab" onclick="switchTab('saldos')">Saldos</div>
+        <div class="tab" onclick="switchTab('historial')">Historial</div>
+      </div>
+
+      <div id="tab-content">
+        </div>
+    </div>
+    <button class="fab" id="fab-add-expense" onclick="openModal('modal-add-expense')"><i class="fa-solid fa-cart-plus"></i></button>
   </div>
 
   <div id="modal-new-event" class="modal-overlay">
     <div class="modal">
-      <h2 style="margin-bottom:20px">Nuevo Evento</h2>
-      <div class="input-group">
-        <label>¿Cómo se llama el evento?</label>
-        <input type="text" id="new-event-name" placeholder="Ej: Asado, Viaje, Cena...">
-      </div>
-      <button class="btn-primary" onclick="createNewEvent()">Crear Evento</button>
-      <button onclick="closeModal('modal-new-event')" style="width:100%; background:none; border:none; color:var(--muted); margin-top:15px; cursor:pointer">Cancelar</button>
+      <h2>Nuevo Evento</h2>
+      <label>Nombre del evento</label>
+      <input type="text" id="ev-name" placeholder="Ej: Viaje Bariloche">
+      <label>Moneda</label>
+      <select id="ev-currency">
+        <option value="ARS">Peso Argentino (ARS)</option>
+        <option value="USD">Dólar (USD)</option>
+        <option value="EUR">Euro (EUR)</option>
+      </select>
+      <button class="btn btn-primary" onclick="dbCreateEvent()">Crear y Compartir</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-new-event')" style="margin-top:10px">Cancelar</button>
     </div>
   </div>
 
   <script>
+    // CONFIGURACIÓN FIREBASE
     const firebaseConfig = {
       apiKey: "AIzaSyApUtaEOhMGQFMrHIzaypRX_GLx2cace_A",
       authDomain: "dividirgastosar.firebaseapp.com",
@@ -141,94 +152,158 @@
       appId: "1:1073347556736:web:d98c2c848cf73c7148bd65"
     };
 
-    let auth, db;
-    let events = []; // Aquí vivirá tu lógica de gastos
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-    function showScreen(id) {
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      document.getElementById('screen-' + id).classList.add('active');
-    }
+    let currentUser = null;
+    let currentEvent = null;
+    let unsubscribeEvents = null;
 
-    function init() {
-      firebase.initializeApp(firebaseConfig);
-      auth = firebase.auth();
-      db = firebase.firestore();
-
-      auth.onAuthStateChanged(user => {
-        if (user) {
-          document.getElementById('user-name').innerText = user.displayName.split(' ')[0];
-          document.getElementById('user-photo').src = user.photoURL;
-          showScreen('main');
-          renderHistory();
+    // --- AUTENTICACIÓN ---
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        currentUser = user;
+        document.getElementById('user-name').innerText = user.displayName.split(' ')[0];
+        document.getElementById('user-photo').src = user.photoURL;
+        
+        // Manejar Link de Invitación
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('join')) {
+          joinEvent(params.get('join'));
         } else {
-          showScreen('onboarding');
+          showScreen('main');
+          listenToEvents();
         }
-      });
-    }
+      } else {
+        showScreen('onboarding');
+      }
+    });
 
     async function login() {
       const provider = new firebase.auth.GoogleAuthProvider();
-      try {
-        await auth.signInWithPopup(provider);
-      } catch (e) {
-        console.error(e);
+      await auth.signInWithPopup(provider);
+    }
+
+    function logout() { auth.signOut(); window.location.href = window.location.pathname; }
+
+    // --- LÓGICA FIRESTORE ---
+    function listenToEvents() {
+      if (unsubscribeEvents) unsubscribeEvents();
+      // Escucha eventos donde el usuario es participante
+      unsubscribeEvents = db.collection('events')
+        .where('participantsIds', 'array-contains', currentUser.uid)
+        .onSnapshot(snapshot => {
+          const events = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+          renderEventList(events);
+        });
+    }
+
+    async function dbCreateEvent() {
+      const name = document.getElementById('ev-name').value;
+      const currency = document.getElementById('ev-currency').value;
+      if (!name) return;
+
+      const newEvent = {
+        name: name,
+        currency: currency,
+        ownerId: currentUser.uid,
+        ownerName: currentUser.displayName,
+        participantsIds: [currentUser.uid],
+        participants: [{id: currentUser.uid, name: currentUser.displayName, photo: currentUser.photoURL}],
+        expenses: [],
+        logs: [{user: currentUser.displayName, action: "creó el evento", date: Date.now()}]
+      };
+
+      const doc = await db.collection('events').add(newEvent);
+      closeModal('modal-new-event');
+      openEventDetail(doc.id);
+    }
+
+    async function joinEvent(id) {
+      const docRef = db.collection('events').doc(id);
+      const doc = await docRef.get();
+      if (doc.exists) {
+        const data = doc.data();
+        if (!data.participantsIds.includes(currentUser.uid)) {
+          await docRef.update({
+            participantsIds: firebase.firestore.FieldValue.arrayUnion(currentUser.uid),
+            participants: firebase.firestore.FieldValue.arrayUnion({
+              id: currentUser.uid, name: currentUser.displayName, photo: currentUser.photoURL
+            }),
+            logs: firebase.firestore.FieldValue.arrayUnion({
+              user: currentUser.displayName, action: "se unió al evento", date: Date.now()
+            })
+          });
+        }
+        window.history.replaceState({}, document.title, window.location.pathname);
+        openEventDetail(id);
       }
     }
 
-    function logout() {
-      if(confirm("¿Querés cerrar sesión?")) auth.signOut();
-    }
-
-    // LÓGICA DE EVENTOS (Basada en tu archivo avanzado)
-    function renderHistory() {
-      const list = document.getElementById('event-list');
+    // --- RENDERIZADO ---
+    function renderEventList(events) {
+      const container = document.getElementById('event-list');
       if (events.length === 0) {
-        list.innerHTML = `
-          <div class="empty-state">
-            <i class="fa-solid fa-folder-open"></i>
-            <p>No hay eventos creados todavía.</p>
-          </div>`;
+        container.innerHTML = `<div style="text-align:center; padding:40px; color:var(--muted);">No tienes eventos. ¡Crea uno nuevo!</div>`;
         return;
       }
-      
-      list.innerHTML = events.map(e => `
-        <div class="event-card" onclick="alert('Próximamente: Detalle de '+ '${e.name}')">
-          <div>
-            <div class="event-name">${e.name}</div>
-            <div class="event-meta">${new Date().toLocaleDateString()}</div>
+      container.innerHTML = events.map(ev => `
+        <div class="event-card ${ev.ownerId !== currentUser.uid ? 'shared' : ''}" onclick="openEventDetail('${ev.id}')">
+          <div class="event-owner">${ev.ownerId === currentUser.uid ? 'Eres el dueño' : 'Creado por ' + ev.ownerName}</div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="event-name">${ev.name}</div>
+            <div style="font-weight:bold; color:var(--accent);">${ev.currency}</div>
           </div>
-          <div class="event-total">$0.00</div>
         </div>
       `).join('');
     }
 
-    function openNewEventModal() {
-      document.getElementById('modal-new-event').classList.add('open');
-      document.getElementById('new-event-name').focus();
+    async function openEventDetail(id) {
+      db.collection('events').doc(id).onSnapshot(doc => {
+        if (!doc.exists) return;
+        currentEvent = {id: doc.id, ...doc.data()};
+        document.getElementById('detail-title').innerText = currentEvent.name;
+        showScreen('detail');
+        switchTab('gastos');
+      });
     }
 
-    function closeModal(id) {
-      document.getElementById(id).classList.remove('open');
+    function switchTab(type) {
+      const content = document.getElementById('tab-content');
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      event.target?.classList?.add('active');
+
+      if (type === 'gastos') {
+        content.innerHTML = currentEvent.expenses.length === 0 ? '<p style="color:var(--muted); text-align:center; margin-top:20px;">No hay gastos cargados.</p>' : 'Lista de gastos...';
+      } else if (type === 'historial') {
+        content.innerHTML = currentEvent.logs.reverse().map(log => `
+          <div class="log-item">
+            ${new Date(log.date).toLocaleDateString()} ${new Date(log.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - 
+            <b>${log.user}</b> ${log.action}
+          </div>
+        `).join('');
+      }
     }
 
-    function createNewEvent() {
-      const name = document.getElementById('new-event-name').value;
-      if (!name) return;
-      
-      const newEvent = {
-        id: Date.now(),
-        name: name,
-        participants: [],
-        expenses: []
-      };
-      
-      events.unshift(newEvent);
-      closeModal('modal-new-event');
-      document.getElementById('new-event-name').value = '';
-      renderHistory();
+    function shareEvent() {
+      const url = window.location.origin + window.location.pathname + "?join=" + currentEvent.id;
+      if (navigator.share) {
+        navigator.share({ title: 'Únete a mi evento en DivideGastos', url: url });
+      } else {
+        prompt("Copia este link para invitar amigos:", url);
+      }
     }
 
-    window.onload = init;
+    // --- UTILIDADES ---
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('screen-' + id).classList.add('active');
+    }
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
   </script>
 </body>
 </html>
