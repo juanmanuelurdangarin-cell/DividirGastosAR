@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>DivideGastos Pro | vMaster 3.5</title>
+<title>DivideGastos Pro | vMaster 4.0</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -13,35 +13,51 @@
         --green: #1de9b6; --red: #ff6584; --text: #e8eaf0; --muted: #7a7f99; --radius: 20px;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
     
+    /* Animaciones y Pantallas */
     .screen { display: none; min-height: 100vh; flex-direction: column; }
     .screen.active { display: flex; animation: fadeIn 0.3s ease; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
+    /* Estética de Cabeceras (de tu archivo TXT) */
     header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; height: 75px; }
     .user-box { display: flex; align-items: center; gap: 12px; }
     .user-box img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover; }
 
     .container { padding: 20px; max-width: 600px; margin: 0 auto; width: 100%; }
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 15px; position: relative; overflow: hidden; }
     
+    /* Cards con el estilo visual mejorado */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 15px; position: relative; cursor: pointer; transition: transform 0.1s; }
+    .card:active { transform: scale(0.98); }
+    
+    /* Navegación por Tabs */
     .tabs-nav { display: flex; background: var(--surface2); padding: 5px; border-radius: 18px; margin-bottom: 20px; gap: 4px; overflow-x: auto; scrollbar-width: none; }
-    .tab-btn { flex: 1; min-width: 85px; padding: 12px 8px; border: none; background: none; color: var(--muted); font-weight: 700; cursor: pointer; border-radius: 14px; font-size: 0.65rem; text-transform: uppercase; }
+    .tab-btn { flex: 1; min-width: 85px; padding: 12px 8px; border: none; background: none; color: var(--muted); font-weight: 700; cursor: pointer; border-radius: 14px; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; }
     .tab-btn.active { background: var(--accent); color: white; box-shadow: 0 4px 15px rgba(255, 0, 69, 0.3); }
 
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.94); display: none; align-items: flex-end; z-index: 1000; padding: 10px; }
+    /* Modales Estilo Moderno */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.94); display: none; align-items: flex-end; z-index: 1000; padding: 10px; backdrop-filter: blur(5px); }
     .modal-overlay.active { display: flex; }
     .modal { background: var(--surface); width: 100%; border-radius: 30px; padding: 25px; max-height: 92vh; overflow-y: auto; border: 1px solid var(--border); }
     
-    input, select { width: 100%; background: var(--surface2); border: 1px solid var(--border); padding: 18px; border-radius: 16px; color: white; margin-bottom: 18px; font-size: 1rem; outline: none; }
-    .btn-main { width: 100%; padding: 20px; border-radius: 18px; border: none; font-weight: 800; cursor: pointer; background: var(--accent); color: white; font-size: 1rem; text-transform: uppercase; }
+    /* Inputs y Botones */
+    input, select { width: 100%; background: var(--surface2); border: 1px solid var(--border); padding: 18px; border-radius: 16px; color: white; margin-bottom: 18px; font-size: 1rem; outline: none; transition: border-color 0.2s; }
+    input:focus { border-color: var(--accent); }
+    .btn-main { width: 100%; padding: 20px; border-radius: 18px; border: none; font-weight: 800; cursor: pointer; background: var(--accent); color: white; font-size: 1rem; text-transform: uppercase; font-family: 'Syne'; }
+
+    /* Items de Checkbox Estilo TXT */
+    .check-item { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: var(--surface2); border-radius: 16px; margin-bottom: 10px; border: 1px solid transparent; }
+    .check-item input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--accent); }
 
     .fab { position: fixed; bottom: 30px; right: 25px; width: 68px; height: 68px; background: var(--accent); color: white; border-radius: 50%; border: none; font-size: 30px; box-shadow: 0 12px 30px rgba(255, 0, 69, 0.4); z-index: 90; display: flex; align-items: center; justify-content: center; }
 
-    #screen-loading { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; justify-content: center; align-items: center; }
+    #screen-loading { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
     .loader { width: 45px; height: 45px; border: 4px solid var(--surface2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Lista de Participantes dentro del Modal */
+    .participant-row { display: flex; align-items: center; justify-content: space-between; padding: 15px; background: var(--surface2); border-radius: 14px; margin-bottom: 8px; }
 </style>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -55,8 +71,9 @@
 <div id="screen-login" class="screen">
     <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:40px; text-align:center;">
         <i class="fa-solid fa-bolt-lightning fa-5x" style="color:var(--accent); margin-bottom:20px;"></i>
-        <h1 style="font-family:'Syne'; font-size:2.8rem; font-weight:800; line-height:0.9;">Divide<br><span style="color:var(--accent)">PRO</span></h1>
-        <button class="btn-main" style="margin-top:40px;" onclick="login()">Entrar con Google</button>
+        <h1 style="font-family:'Syne'; font-size:3.2rem; font-weight:800; line-height:0.85;">Divide<br><span style="color:var(--accent)">PRO</span></h1>
+        <p style="margin-top:15px; opacity:0.6; font-weight:500;">Gestión de gastos grupales</p>
+        <button class="btn-main" style="margin-top:50px;" onclick="login()">Ingresar con Google</button>
     </div>
 </div>
 
@@ -66,7 +83,7 @@
         <button onclick="logout()" style="background:none; border:none; color:var(--muted);"><i class="fa-solid fa-power-off"></i></button>
     </header>
     <div class="container">
-        <h2 style="font-family:'Syne'; margin-bottom:25px;">Mis Eventos</h2>
+        <h2 style="font-family:'Syne'; font-size:1.8rem; margin-bottom:25px;">Mis Eventos</h2>
         <div id="event-list"></div>
     </div>
     <button class="fab" onclick="openModalCreate()"><i class="fa-solid fa-plus"></i></button>
@@ -75,8 +92,8 @@
 <div id="screen-detail" class="screen">
     <header>
         <button onclick="showScreen('screen-main')" style="background:none; border:none; color:white;"><i class="fa-solid fa-arrow-left"></i></button>
-        <h3 id="det-title" style="font-family:'Syne'; flex:1; text-align:center; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; padding:0 10px;">Evento</h3>
-        <div style="display:flex; gap:15px;">
+        <h3 id="det-title" style="font-family:'Syne'; flex:1; text-align:center; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; padding:0 10px;">Cargando...</h3>
+        <div style="display:flex; gap:12px;">
             <button onclick="openModal('modal-manage-participants')" style="background:none; border:none; color:var(--text);"><i class="fa-solid fa-users"></i></button>
             <button onclick="shareEvent()" style="background:none; border:none; color:var(--accent);"><i class="fa-solid fa-share-nodes"></i></button>
         </div>
@@ -85,7 +102,7 @@
         <div class="tabs-nav">
             <button class="tab-btn active" onclick="switchTab('gastos', this)">Gastos</button>
             <button class="tab-btn" onclick="switchTab('saldos', this)">Saldos</button>
-            <button class="tab-btn" onclick="switchTab('transfer', this)">Transfer</button>
+            <button class="tab-btn" onclick="switchTab('transfer', this)">Pagar</button>
             <button class="tab-btn" onclick="switchTab('historial', this)">Log</button>
         </div>
         <div id="tab-area"></div>
@@ -96,7 +113,7 @@
 <div id="modal-new-event" class="modal-overlay" onclick="if(event.target==this)closeModal('modal-new-event')">
     <div class="modal">
         <h2 style="font-family:'Syne'; margin-bottom:20px;">Nuevo Evento</h2>
-        <input type="text" id="new-name" placeholder="Nombre del evento">
+        <input type="text" id="new-name" placeholder="Nombre (ej: Asado, Viaje...)">
         <div id="setup-parts-list" style="margin-bottom:15px; display:flex; flex-wrap:wrap; gap:8px;"></div>
         <input type="text" id="in-part-name" placeholder="Nombre amigo + Enter" onkeypress="if(event.key==='Enter')addPartToSetup()">
         <button class="btn-main" onclick="dbCreateEvent()">Crear Evento</button>
@@ -108,10 +125,12 @@
         <h2 id="expense-modal-title" style="margin-bottom:20px; font-family:'Syne';">Cargar Gasto</h2>
         <input type="text" id="ex-desc" placeholder="¿Qué compraron?">
         <input type="number" id="ex-amount" placeholder="Monto total ($)">
+        <p style="font-size:0.8rem; color:var(--muted); margin-bottom:8px;">¿Quién pagó?</p>
         <select id="ex-payer"></select>
+        <p style="font-size:0.8rem; color:var(--muted); margin-bottom:12px;">Participantes del gasto:</p>
         <div id="ex-list-checks" style="margin-bottom:30px;"></div>
         <button class="btn-main" id="btn-save-expense" onclick="dbSaveExpense()">Guardar Gasto</button>
-        <button id="btn-delete-expense" onclick="dbDeleteExpense()" style="display:none; width:100%; margin-top:15px; background:none; border:none; color:var(--red); font-weight:bold;">ELIMINAR GASTO</button>
+        <button id="btn-delete-expense" onclick="dbDeleteExpense()" style="display:none; width:100%; margin-top:20px; background:none; border:none; color:var(--red); font-weight:bold; letter-spacing:1px;">ELIMINAR ESTE GASTO</button>
     </div>
 </div>
 
@@ -119,7 +138,7 @@
     <div class="modal">
         <h2 style="font-family:'Syne'; margin-bottom:20px;">Participantes</h2>
         <div id="manage-parts-list" style="margin-bottom:25px;"></div>
-        <input type="text" id="add-new-part-name" placeholder="Nombre + Enter para agregar..." onkeypress="if(event.key==='Enter')addNewParticipantDirect()">
+        <input type="text" id="add-new-part-name" placeholder="Nombre + Enter para sumar..." onkeypress="if(event.key==='Enter')addNewParticipantDirect()">
         <button class="btn-main" style="background:var(--surface2); color:var(--muted);" onclick="closeModal('modal-manage-participants')">Cerrar</button>
     </div>
 </div>
@@ -172,7 +191,7 @@
                         await eventRef.update({
                             participantsIds: firebase.firestore.FieldValue.arrayUnion(auth.currentUser.uid),
                             participants: firebase.firestore.FieldValue.arrayUnion({ id: auth.currentUser.uid, name: auth.currentUser.displayName }),
-                            logs: firebase.firestore.FieldValue.arrayUnion({ u: "Sistema", a: `${auth.currentUser.displayName} se unió`, d: Date.now() })
+                            logs: firebase.firestore.FieldValue.arrayUnion({ u: "Sistema", a: `se unió ${auth.currentUser.displayName}`, d: Date.now() })
                         });
                     }
                     window.history.replaceState({}, document.title, window.location.pathname);
@@ -186,11 +205,11 @@
         db.collection('events').where('participantsIds', 'array-contains', auth.currentUser.uid)
         .onSnapshot(snap => {
             const list = document.getElementById('event-list');
-            list.innerHTML = snap.empty ? '<p style="text-align:center; padding:40px; opacity:0.5;">No hay eventos.</p>' : 
+            list.innerHTML = snap.empty ? '<p style="text-align:center; padding:40px; opacity:0.5;">No tienes eventos activos.</p>' : 
             snap.docs.map(doc => `
                 <div class="card" onclick="openEvent('${doc.id}')">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <h4 style="font-family:'Syne'; color:white;">${doc.data().name}</h4>
+                        <h4 style="font-family:'Syne'; font-size:1.1rem; color:white;">${doc.data().name}</h4>
                         <button onclick="event.stopPropagation(); dbDeleteEvent('${doc.id}')" style="background:none; border:none; color:var(--muted); padding:10px;"><i class="fa-solid fa-ellipsis-vertical"></i></button>
                     </div>
                 </div>`).join('');
@@ -198,7 +217,7 @@
     }
 
     async function dbDeleteEvent(id) {
-        if(confirm("¿Seguro querés eliminar este evento para todos?")) {
+        if(confirm("¿Eliminar este evento definitivamente?")) {
             await db.collection('events').doc(id).delete();
         }
     }
@@ -219,7 +238,7 @@
 
     function renderSetupParts() {
         document.getElementById('setup-parts-list').innerHTML = tempParticipants.map(p => `
-            <div style="background:var(--accent-soft); color:var(--accent); padding:8px 15px; border-radius:12px; font-weight:700;">${p.name}</div>
+            <div style="background:var(--accent-soft); color:var(--accent); padding:8px 15px; border-radius:12px; font-weight:700; font-size:0.85rem;">${p.name}</div>
         `).join('');
     }
 
@@ -257,8 +276,8 @@
         `).join('');
 
         document.getElementById('ex-list-checks').innerHTML = currentEvent.participants.map(p => `
-            <div style="display:flex; justify-content:space-between; padding:12px; background:var(--surface2); border-radius:12px; margin-bottom:8px;">
-                <span>${p.name}</span>
+            <div class="check-item">
+                <span style="font-weight:500;">${p.name}</span>
                 <input type="checkbox" value="${p.id}" class="ex-check" ${!expense || expense.includedIds.includes(p.id) ? 'checked' : ''}>
             </div>
         `).join('');
@@ -286,12 +305,12 @@
         closeModal('modal-add-expense');
         await db.collection('events').doc(currentEvent.id).update({
             expenses: newExpenses,
-            logs: firebase.firestore.FieldValue.arrayUnion({u: auth.currentUser.displayName, a: `${editingExpenseId ? 'editó' : 'sumó'} ${desc}`, d: Date.now()})
+            logs: firebase.firestore.FieldValue.arrayUnion({u: auth.currentUser.displayName, a: `${editingExpenseId ? 'modificó' : 'cargó'} ${desc}`, d: Date.now()})
         });
     }
 
     async function dbDeleteExpense() {
-        if(!confirm("¿Borrar este gasto?")) return;
+        if(!confirm("¿Borrar este gasto del historial?")) return;
         const newExpenses = currentEvent.expenses.filter(e => e.id !== editingExpenseId);
         closeModal('modal-add-expense');
         await db.collection('events').doc(currentEvent.id).update({ expenses: newExpenses });
@@ -330,17 +349,17 @@
         const area = document.getElementById('tab-area');
         if(activeTab === 'gastos') {
             area.innerHTML = currentEvent.expenses.slice().reverse().map(e => `
-                <div class="card" onclick='openExpenseModal(${JSON.stringify(e).replace(/'/g, "&apos;")})' style="border-left:5px solid var(--accent)">
-                    <div style="display:flex; justify-content:space-between;">
-                        <b>${e.desc}</b><b style="color:var(--accent)">${fmt.format(e.amount)}</b>
+                <div class="card" onclick='openExpenseModal(${JSON.stringify(e).replace(/'/g, "&apos;")})' style="border-left:4px solid var(--accent)">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                        <b style="font-size:1.05rem;">${e.desc}</b><b style="color:var(--accent)">${fmt.format(e.amount)}</b>
                     </div>
-                    <small style="opacity:0.6">Pagó ${e.payerName}</small>
-                </div>`).join('');
+                    <small style="color:var(--muted)">Pagó ${e.payerName}</small>
+                </div>`).join('') || '<p style="text-align:center; opacity:0.5; padding:20px;">Sin gastos cargados.</p>';
         } else if(activeTab === 'saldos') {
             const bal = calculateBalances();
             area.innerHTML = currentEvent.participants.map(p => `
-                <div class="card" style="display:flex; justify-content:space-between;">
-                    <span>${p.name}</span><b style="color:${bal[p.id] >= 0 ? 'var(--green)' : 'var(--red)'}">${fmt.format(bal[p.id])}</b>
+                <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight:600;">${p.name}</span><b style="color:${bal[p.id] >= 0 ? 'var(--green)' : 'var(--red)'}; font-size:1.1rem;">${fmt.format(bal[p.id])}</b>
                 </div>`).join('');
         } else if(activeTab === 'transfer') {
             const bal = calculateBalances();
@@ -354,21 +373,21 @@
                 acreedores.forEach(a => {
                     if(d.amt > 0 && a.amt > 0) {
                         let move = Math.min(d.amt, a.amt);
-                        trans.push(`<b>${currentEvent.participants.find(p=>p.id===d.id).name}</b> debe <b>${fmt.format(move)}</b> a <b>${currentEvent.participants.find(p=>p.id===a.id).name}</b>`);
+                        trans.push(`<b>${currentEvent.participants.find(p=>p.id===d.id).name}</b> le paga <b>${fmt.format(move)}</b> a <b>${currentEvent.participants.find(p=>p.id===a.id).name}</b>`);
                         d.amt -= move; a.amt -= move;
                     }
                 });
             });
-            area.innerHTML = trans.map(t => `<div class="card">${t}</div>`).join('') || '<p style="text-align:center;">Sin deudas</p>';
+            area.innerHTML = trans.map(t => `<div class="card" style="border-left:4px solid var(--green); font-size:0.95rem;">${t}</div>`).join('') || '<p style="text-align:center; padding:20px;">¡Cuentas claras!</p>';
         } else {
-            area.innerHTML = currentEvent.logs.slice().reverse().map(l => `<div style="padding:10px; border-bottom:1px solid var(--border); font-size:0.8rem;"><b>${l.u}</b> ${l.a}</div>`).join('');
+            area.innerHTML = currentEvent.logs.slice().reverse().map(l => `<div style="padding:15px; border-bottom:1px solid var(--border); font-size:0.85rem; opacity:0.7;"><b>${l.u}</b> ${l.a}</div>`).join('');
         }
     }
 
     function shareEvent() {
         const url = window.location.origin + window.location.pathname + "?join=" + currentEvent.id;
-        if(navigator.share) navigator.share({title: 'Sumate a ' + currentEvent.name, url});
-        else prompt("Link de invitación:", url);
+        if(navigator.share) navigator.share({title: 'Invitación: ' + currentEvent.name, url});
+        else prompt("Link para invitar:", url);
     }
 
     function openModal(id) { document.getElementById(id).classList.add('active'); }
