@@ -1,4 +1,4 @@
-let currentEvent = { id: Date.now(), title: "", currency: "$", friends: [], expenses: [] };
+let currentEvent = { id: Date.now(), title: "", currency: "$", friends: [], expenses: [], version: 1 };
 let allEvents = [];
 let editingIndex = null;
 let hasUnsharedChanges = false;
@@ -13,16 +13,23 @@ window.onload = () => {
     if (sharedData) {
         try {
             const decoded = JSON.parse(atob(sharedData));
-            // Si el evento ya existe en mi historial, lo actualizo. Si no, lo agrego.
             const existingIdx = allEvents.findIndex(e => e.id === decoded.id);
+            
+            // Lógica de versión: Solo actualizar si la versión que entra es mayor o igual a la local
             if (existingIdx > -1) {
-                allEvents[existingIdx] = decoded;
+                if ((decoded.version || 0) >= (allEvents[existingIdx].version || 0)) {
+                    allEvents[existingIdx] = decoded;
+                    currentEvent = decoded;
+                } else {
+                    alert("Atención: El link que abriste es una versión antigua (v" + decoded.version + "). Se mantendrá tu versión local más reciente (v" + allEvents[existingIdx].version + ").");
+                    currentEvent = allEvents[existingIdx];
+                }
             } else {
                 allEvents.push(decoded);
+                currentEvent = decoded;
             }
-            currentEvent = decoded;
+            
             saveToLocal();
-            // Limpiamos la URL para que el F5 no cargue datos viejos
             window.history.replaceState({}, document.title, window.location.pathname);
             showMainScreen();
         } catch (e) { console.error("Error link compartido"); }
@@ -37,7 +44,9 @@ function saveToLocal() {
 
 function notifyChange() {
     hasUnsharedChanges = true;
+    currentEvent.version = (currentEvent.version || 1) + 1; // Subimos la versión ante cualquier cambio
     document.getElementById('share-dot').classList.remove('hidden');
+    document.getElementById('version-display').innerText = `v${currentEvent.version}`;
 }
 
 // NAVEGACIÓN
@@ -50,14 +59,14 @@ function showHistory() {
     const list = document.getElementById('history-list');
     list.innerHTML = allEvents.map(e => `
         <div class="history-item" onclick="loadEvent(${e.id})">
-            <div><strong>${e.title}</strong><br><small>${e.friends.length} amigos • ${e.expenses.length} gastos</small></div>
+            <div><strong>${e.title}</strong><br><small>v${e.version || 1} • ${e.friends.length} amigos</small></div>
             <i class="fas fa-chevron-right" style="color:#ccc"></i>
         </div>
     `).join('');
 }
 
 function createNewEvent() {
-    currentEvent = { id: Date.now(), title: "", currency: "$", friends: [], expenses: [] };
+    currentEvent = { id: Date.now(), title: "", currency: "$", friends: [], expenses: [], version: 1 };
     document.getElementById('history-screen').classList.add('hidden');
     document.getElementById('setup-screen').classList.remove('hidden');
     renderFriendsList();
@@ -96,7 +105,6 @@ function startEvent() {
     if (currentEvent.friends.length < 2) return alert("Mínimo 2 personas");
     currentEvent.title = document.getElementById('event-title').value || "Evento";
     currentEvent.currency = document.getElementById('event-currency').value;
-    
     syncCurrentToAll();
     showMainScreen();
 }
@@ -107,6 +115,7 @@ function showMainScreen() {
     document.getElementById('main-screen').classList.remove('hidden');
     document.getElementById('btn-back').classList.remove('hidden');
     document.getElementById('event-title-display').innerText = currentEvent.title;
+    document.getElementById('version-display').innerText = `v${currentEvent.version || 1}`;
     document.getElementById('currency-display').innerText = currentEvent.currency;
     updatePayerList();
     calculateAll();
@@ -148,10 +157,10 @@ function saveExpense() {
     if (editingIndex !== null) currentEvent.expenses[editingIndex] = exp;
     else currentEvent.expenses.push(exp);
 
+    notifyChange();
     syncCurrentToAll();
     calculateAll();
     closeExpenseModal();
-    notifyChange();
 }
 
 function syncCurrentToAll() {
@@ -203,18 +212,56 @@ function renderUI(balances) {
     document.getElementById('settlements-list').innerHTML = html || '<p style="text-align:center;">¡Están a mano!</p>';
 }
 
+// COMPARTIR LINK + TEXTO RESUMEN CON VERSIÓN
 function shareEventLink() {
     const dataString = btoa(JSON.stringify(currentEvent));
     const shareUrl = `${window.location.origin}${window.location.pathname}?data=${dataString}`;
     
+    let textSummary = `📊 *Resumen de ${currentEvent.title} (v${currentEvent.version || 1})*\n\n¿Cómo saldar deudas?\n`;
+    
+    let balances = {};
+    currentEvent.friends.forEach(f => balances[f] = 0);
+    currentEvent.expenses.forEach(e => {
+        balances[e.payer] += e.amount;
+        const share = e.amount / e.participants.length;
+        e.participants.forEach(p => balances[p] -= share);
+    });
+
+    let d = [], c = [];
+    for(let f in balances) {
+        if(balances[f] < -0.01) d.push({n:f, a:Math.abs(balances[f])});
+        if(balances[f] > 0.01) c.push({n:f, a:balances[f]});
+    }
+
+    let debtFound = false;
+    d.forEach(deb => {
+        let tempDebA = deb.a;
+        c.forEach(cre => {
+            if(tempDebA > 0 && cre.a > 0) {
+                let m = Math.min(tempDebA, cre.a);
+                textSummary += `💸 *${deb.n}* le paga *${m.toFixed(2)} ${currentEvent.currency}* a *${cre.n}*\n`;
+                tempDebA -= m;
+                cre.a -= m;
+                debtFound = true;
+            }
+        });
+    });
+
+    if (!debtFound) textSummary += "¡Todos están a mano!\n";
+    
+    textSummary += `\n🔗 *Link para editar:* ${shareUrl}\n\nEnviado desde DivideGastos`;
+
     if (navigator.share) {
-        navigator.share({ title: currentEvent.title, url: shareUrl }).then(() => {
+        navigator.share({
+            title: `Gastos: ${currentEvent.title}`,
+            text: textSummary
+        }).then(() => {
             hasUnsharedChanges = false;
             document.getElementById('share-dot').classList.add('hidden');
         });
     } else {
-        navigator.clipboard.writeText(shareUrl);
-        alert("Link actualizado copiado al portapapeles. ¡Reenvialo al grupo!");
+        navigator.clipboard.writeText(textSummary);
+        alert("Resumen (v" + currentEvent.version + ") copiado al portapapeles.");
         hasUnsharedChanges = false;
         document.getElementById('share-dot').classList.add('hidden');
     }
