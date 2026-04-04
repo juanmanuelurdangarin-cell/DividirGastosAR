@@ -14,8 +14,11 @@
                 <button class="icon-btn" onclick="showHistory()" title="Mis Eventos">
                     <i class="fas fa-list-ul"></i>
                 </button>
-                <button class="icon-btn" onclick="shareEventLink()" id="btn-share" title="Compartir Evento Editable">
+                <button class="icon-btn" onclick="shareEventLink()" id="btn-share" title="Compartir Link Editable">
                     <i class="fas fa-share-nodes"></i>
+                </button>
+                <button class="icon-btn" onclick="goBackToSetup()" id="btn-back" title="Editar Miembros">
+                    <i class="fas fa-user-plus"></i>
                 </button>
             </div>
             <h1 id="event-title-display">DivideGastos</h1>
@@ -30,7 +33,7 @@
 
         <section id="setup-screen" class="card">
             <h2>Configuración del Evento</h2>
-            <input type="text" id="event-title" placeholder="Título (ej: Viaje Bariloche)">
+            <input type="text" id="event-title" placeholder="Título (ej: Asado, Viaje)">
             <select id="event-currency">
                 <option value="$">Pesos (ARS)</option>
                 <option value="USD">Dólares (USD)</option>
@@ -41,7 +44,7 @@
                 <button class="btn-secondary" onclick="addFriend()">Añadir</button>
             </div>
             <ul id="friends-list"></ul>
-            <button class="btn-main" onclick="startEvent()">Guardar y Empezar</button>
+            <button class="btn-main" onclick="startEvent()">Guardar y Continuar</button>
         </section>
 
         <section id="main-screen" class="hidden">
@@ -50,23 +53,37 @@
                 <button class="tab-btn" onclick="showTab('saldos')">Saldos</button>
                 <button class="tab-btn" onclick="showTab('deudas')">Pagos</button>
             </nav>
+
             <div id="tab-gastos" class="tab-content">
                 <div id="expenses-list"></div>
                 <button class="fab" onclick="openExpenseModal()">+</button>
             </div>
-            <div id="tab-saldos" class="tab-content hidden"><div id="balances-list"></div></div>
-            <div id="tab-deudas" class="tab-content hidden"><div id="settlements-list"></div></div>
+
+            <div id="tab-saldos" class="tab-content hidden">
+                <div id="balances-list"></div>
+            </div>
+
+            <div id="tab-deudas" class="tab-content hidden">
+                <div id="settlements-list"></div>
+            </div>
         </section>
 
         <div id="expense-modal" class="modal hidden">
             <div class="modal-content">
-                <h3 id="modal-title">Gasto</h3>
-                <input type="text" id="exp-title" placeholder="¿Qué se compró?">
+                <h3 id="modal-title">Agregar Gasto</h3>
+                <input type="text" id="exp-title" placeholder="¿En qué se gastó?">
                 <input type="number" id="exp-amount" placeholder="Monto" step="0.01" inputmode="decimal">
-                <label>Pagó:</label>
+                
+                <label>¿Quién pagó?</label>
                 <select id="exp-payer"></select>
-                <label>Participan:</label>
+
+                <label>¿Quiénes participan?</label>
+                <div class="selection-tools">
+                    <button class="btn-small" onclick="toggleAllFriends(true)">Todos</button>
+                    <button class="btn-small" onclick="toggleAllFriends(false)">Ninguno</button>
+                </div>
                 <div id="exp-participants"></div>
+
                 <div class="modal-actions">
                     <button class="btn-cancel" onclick="closeExpenseModal()">Cancelar</button>
                     <button class="btn-main" onclick="saveExpense()">Guardar</button>
