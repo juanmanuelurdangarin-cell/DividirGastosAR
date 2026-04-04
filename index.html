@@ -1407,7 +1407,9 @@ const firebaseConfig = {
   measurementId: "G-2D1WKFMJ1W"
 };
 
-let auth, db;
+// Usamos las variables si ya existen, si no las inicializamos como null
+if (typeof auth === 'undefined') { var auth = null; }
+if (typeof db === 'undefined') { var db = null; }
 
 // ══════════════════════════════════════════════════════════
 //  LÓGICA DE AUTENTICACIÓN
