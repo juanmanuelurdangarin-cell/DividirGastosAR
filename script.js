@@ -5,9 +5,30 @@ let eventData = {
     expenses: []
 };
 
-let editingExpenseIndex = null;
+// --- PERSISTENCIA (LOCAL STORAGE) ---
+function saveToLocal() {
+    localStorage.setItem('split_app_data', JSON.stringify(eventData));
+}
 
-// --- INICIO ---
+function loadFromLocal() {
+    const saved = localStorage.getItem('split_app_data');
+    if (saved) {
+        eventData = JSON.parse(saved);
+        if (eventData.friends.length > 0) {
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('main-screen').classList.remove('hidden');
+            document.getElementById('event-title-display').innerText = eventData.title;
+            document.getElementById('currency-display').innerText = eventData.currency;
+            updateUIPayerList();
+            calculateAll();
+        }
+    }
+}
+
+// Cargar datos al iniciar
+window.onload = loadFromLocal;
+
+// --- GESTIÓN DE EVENTO ---
 function addFriend() {
     const input = document.getElementById('friend-name');
     const name = input.value.trim();
@@ -15,12 +36,8 @@ function addFriend() {
         eventData.friends.push(name);
         renderFriendsList();
         input.value = "";
+        saveToLocal();
     }
-}
-
-function renderFriendsList() {
-    const list = document.getElementById('friends-list');
-    list.innerHTML = eventData.friends.map(f => `<li>${f}</li>`).join('');
 }
 
 function startEvent() {
@@ -34,41 +51,38 @@ function startEvent() {
     document.getElementById('main-screen').classList.remove('hidden');
     
     updateUIPayerList();
+    saveToLocal();
 }
 
-// --- GESTIÓN DE GASTOS ---
-function openExpenseModal(index = null) {
-    editingExpenseIndex = index;
-    const modal = document.getElementById('expense-modal');
-    modal.classList.remove('hidden');
+// --- FUNCIÓN COMPARTIR ---
+async function shareResults() {
+    let text = `📊 *Resumen de Gastos: ${eventData.title}*\n\n`;
     
-    const participantsDiv = document.getElementById('exp-participants');
-    participantsDiv.innerHTML = eventData.friends.map(f => `
-        <div class="participant-item">
-            <input type="checkbox" name="part-check" value="${f}" checked>
-            <span>${f}</span>
-        </div>
-    `).join('');
+    // Sacamos los saldos actuales
+    const settlements = document.getElementById('settlements-list').innerText;
+    if (settlements.includes("Sugerencias")) {
+        text += `✅ *Deudas a saldar:*\n${settlements.replace("Sugerencias de pago", "")}`;
+    } else {
+        text += "No hay deudas pendientes.";
+    }
 
-    if (index !== null) {
-        const exp = eventData.expenses[index];
-        document.getElementById('exp-title').value = exp.title;
-        document.getElementById('exp-amount').value = exp.amount;
-        document.getElementById('exp-payer').value = exp.payer;
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: eventData.title,
+                text: text
+            });
+        } catch (err) {
+            console.log("Error al compartir");
+        }
+    } else {
+        // Fallback: Copiar al portapapeles
+        navigator.clipboard.writeText(text);
+        alert("Resumen copiado al portapapeles para pegar en WhatsApp.");
     }
 }
 
-function closeExpenseModal() {
-    document.getElementById('expense-modal').classList.add('hidden');
-    document.getElementById('exp-title').value = "";
-    document.getElementById('exp-amount').value = "";
-}
-
-function toggleAllFriends(status) {
-    const checks = document.getElementsByName('part-check');
-    checks.forEach(c => c.checked = status);
-}
-
+// --- RESTO DE LA LÓGICA (MODIFICADA PARA GUARDAR) ---
 function saveExpense() {
     const title = document.getElementById('exp-title').value;
     const amount = parseFloat(document.getElementById('exp-amount').value);
@@ -79,99 +93,11 @@ function saveExpense() {
     if (!title || !amount || participants.length === 0) return alert("Completa todos los datos");
 
     const expense = { title, amount, payer, participants };
-
-    if (editingExpenseIndex !== null) {
-        eventData.expenses[editingExpenseIndex] = expense;
-    } else {
-        eventData.expenses.push(expense);
-    }
-
+    eventData.expenses.push(expense);
+    
     closeExpenseModal();
     calculateAll();
+    saveToLocal(); // Guardamos después de cada gasto
 }
 
-// --- CÁLCULOS ---
-function calculateAll() {
-    let balances = {};
-    eventData.friends.forEach(f => balances[f] = 0);
-
-    eventData.expenses.forEach(exp => {
-        // Al que pagó se le suma el total
-        balances[exp.payer] += exp.amount;
-        // A cada participante se le resta su parte proporcional
-        const share = exp.amount / exp.participants.length;
-        exp.participants.forEach(p => {
-            balances[p] -= share;
-        });
-    });
-
-    renderExpenses();
-    renderBalances(balances);
-    renderSettlements(balances);
-}
-
-function renderExpenses() {
-    const list = document.getElementById('expenses-list');
-    list.innerHTML = eventData.expenses.map((exp, i) => `
-        <div class="expense-card" onclick="openExpenseModal(${i})">
-            <div>
-                <strong>${exp.title}</strong><br>
-                <small>Pagó: ${exp.payer}</small>
-            </div>
-            <div>${eventData.currency} ${exp.amount.toFixed(2)}</div>
-        </div>
-    `).join('');
-}
-
-function renderBalances(balances) {
-    const list = document.getElementById('balances-list');
-    list.innerHTML = eventData.friends.map(f => {
-        const bal = balances[f];
-        return `
-            <div class="balance-item">
-                <span>${f}</span>
-                <span class="${bal >= 0 ? 'positive' : 'negative'}">
-                    ${bal >= 0 ? '+' : ''}${bal.toFixed(2)} ${eventData.currency}
-                </span>
-            </div>
-        `;
-    }).join('');
-}
-
-function renderSettlements(balances) {
-    const list = document.getElementById('settlements-list');
-    let debtors = [];
-    let creditors = [];
-
-    // Separar los que deben de los que tienen que cobrar
-    for (let f in balances) {
-        if (balances[f] < -0.01) debtors.push({name: f, amount: Math.abs(balances[f])});
-        if (balances[f] > 0.01) creditors.push({name: f, amount: balances[f]});
-    }
-
-    let html = "<h3>Sugerencias de pago</h3>";
-    debtors.forEach(d => {
-        creditors.forEach(c => {
-            if (d.amount > 0 && c.amount > 0) {
-                let payment = Math.min(d.amount, c.amount);
-                html += `<div class="card"><strong>${d.name}</strong> debe transferir <strong>${payment.toFixed(2)} ${eventData.currency}</strong> a <strong>${c.name}</strong></div>`;
-                d.amount -= payment;
-                c.amount -= payment;
-            }
-        });
-    });
-    list.innerHTML = html;
-}
-
-// --- UTILS ---
-function updateUIPayerList() {
-    const select = document.getElementById('exp-payer');
-    select.innerHTML = eventData.friends.map(f => `<option value="${f}">${f}</option>`).join('');
-}
-
-function showTab(tabName) {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(`tab-${tabName}`).classList.remove('hidden');
-    event.currentTarget.classList.add('active');
-}
+// (Mantené las funciones renderExpenses, renderBalances, renderSettlements, etc. del código anterior)
