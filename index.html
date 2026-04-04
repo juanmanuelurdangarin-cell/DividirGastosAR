@@ -3,134 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DivideGastos Premium</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <title>DivideGastos Pro | Premium Edition</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="app">
-        <section id="welcome-screen" class="screen hidden">
-            <div class="welcome-container">
-                <div class="brand-logo">
-                    <i class="fas fa-receipt"></i>
-                </div>
-                <h1 id="welcome-title">Bienvenido</h1>
-                <p class="subtitle">Configurá tu región para empezar</p>
-                
-                <div class="form-group">
-                    <label><i class="fas fa-language"></i> Idioma / Language</label>
-                    <select id="main-lang-selector" class="custom-select" onchange="onLanguageChange(this.value)">
-                        <option value="">Seleccionar...</option>
-                        <option value="es">Español</option>
-                        <option value="en">English</option>
-                        <option value="pt">Português</option>
-                    </select>
-                </div>
 
-                <div id="country-wrapper" class="form-group hidden">
-                    <label><i class="fas fa-map-marker-alt"></i> País / Country</label>
-                    <select id="main-country-selector" class="custom-select"></select>
-                    <button class="btn-primary-lg" onclick="confirmIdentity()">
-                        Continuar <i class="fas fa-arrow-right"></i>
-                    </button>
-                </div>
+<section id="screen-onboarding" class="screen active">
+    <div class="ob-logo">
+        <div class="ob-logo-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+        <div class="ob-logo-text">Divide<span>Gastos</span></div>
+    </div>
+    <div class="ob-hero">
+        <h1>Dividí gastos sin <em>dramas.</em></h1>
+        <p>La herramienta definitiva para asados, viajes y salidas. Calculá deudas en segundos.</p>
+    </div>
+    <div class="ob-form">
+        <label>Idioma y Moneda Local</label>
+        <select id="ob-lang" onchange="updateOnboardingUI()">
+            <option value="es">🇦🇷 Español (ARS)</option>
+            <option value="en">🇺🇸 English (USD)</option>
+            <option value="pt">🇧🇷 Português (BRL)</option>
+        </select>
+        <button class="btn-primary" onclick="completeOnboarding()">
+            Continuar <i class="fa-solid fa-arrow-right"></i>
+        </button>
+    </div>
+</section>
+
+<section id="screen-history" class="screen">
+    <div class="top-bar">
+        <div class="top-bar-title">Mis Eventos</div>
+        <div class="version-badge">PRO v1.2</div>
+    </div>
+    <div class="history-list" id="history-list"></div>
+    <button class="fab" onclick="showScreen('screen-setup')">
+        <i class="fa-solid fa-plus"></i> Nuevo Evento
+    </button>
+</section>
+
+<section id="screen-setup" class="screen">
+    <div class="top-bar">
+        <button class="icon-btn" onclick="showScreen('screen-history')"><i class="fa-solid fa-arrow-left"></i></button>
+        <div class="top-bar-title">Configurar</div>
+        <div></div>
+    </div>
+    <div class="setup-content">
+        <div class="form-group">
+            <label>Nombre del evento</label>
+            <input class="form-input" id="setup-title" type="text" placeholder="Ej: Viaje a Bariloche">
+        </div>
+        <div class="form-group">
+            <label>Moneda</label>
+            <div class="currency-grid" id="currency-grid">
+                <button class="currency-btn active" onclick="setCurrency('ARS', this)">ARS</button>
+                <button class="currency-btn" onclick="setCurrency('USD', this)">USD</button>
+                <button class="currency-btn" onclick="setCurrency('EUR', this)">EUR</button>
             </div>
-        </section>
-
-        <header id="main-header" class="main-header hidden">
-            <div class="header-top">
-                <button class="nav-icon" onclick="showHistory()"><i class="fas fa-chevron-left"></i></button>
-                <div class="header-center">
-                    <h2 id="event-title-display">DivideGastos</h2>
-                    <span id="version-tag">v1.0</span>
-                </div>
-                <button class="nav-icon" onclick="shareEventLink()"><i class="fas fa-share-alt"></i></button>
-            </div>
-            <div class="currency-pill" id="currency-display">ARS</div>
-        </header>
-
-        <main id="content-area" class="hidden">
-            <section id="history-screen" class="page hidden">
-                <div class="section-header">
-                    <h3 data-i18n="history_title">Tus Eventos</h3>
-                </div>
-                <div id="history-list" class="event-grid"></div>
-                <button class="btn-fab-text" onclick="createNewEvent()">
-                    <i class="fas fa-plus"></i> <span data-i18n="btn_new_event">Nuevo Evento</span>
-                </button>
-            </section>
-
-            <section id="setup-screen" class="page hidden">
-                <div class="card setup-card">
-                    <h3 data-i18n="setup_title">Nuevo Evento</h3>
-                    <input type="text" id="event-title" class="modern-input" data-i18n-placeholder="placeholder_title">
-                    
-                    <div class="input-row">
-                        <select id="event-currency" class="modern-select"></select>
-                    </div>
-
-                    <div class="friend-input-zone">
-                        <input type="text" id="friend-name" class="modern-input" data-i18n-placeholder="placeholder_name">
-                        <button class="btn-add-friend" onclick="addFriend()"><i class="fas fa-user-plus"></i></button>
-                    </div>
-                    <div id="friends-chips" class="chips-container"></div>
-                    
-                    <button class="btn-primary-lg" onclick="startEvent()" data-i18n="btn_save_continue">Crear ahora</button>
-                </div>
-            </section>
-
-            <section id="main-screen" class="page hidden">
-                <nav class="tab-bar">
-                    <button class="tab-item active" onclick="showTab('gastos')" data-i18n="tab_expenses">Gastos</button>
-                    <button class="tab-item" onclick="showTab('saldos')" data-i18n="tab_balances">Saldos</button>
-                    <button class="tab-item" onclick="showTab('deudas')" data-i18n="tab_payments">Pagos</button>
-                </nav>
-
-                <div id="tab-gastos" class="tab-pane active">
-                    <div id="expenses-list"></div>
-                    <button class="fab-main" onclick="openExpenseModal()"><i class="fas fa-plus"></i></button>
-                </div>
-                <div id="tab-saldos" class="tab-pane hidden">
-                    <div id="balances-list" class="card"></div>
-                </div>
-                <div id="tab-deudas" class="tab-pane hidden">
-                    <div id="settlements-list"></div>
-                </div>
-            </section>
-        </main>
-
-        <footer id="ads-container" class="ad-footer hidden">
-            <div class="ad-tag">Promocionado</div>
-            <a href="https://www.pedidosya.com.ar" target="_blank" class="ad-link">
-                <div class="ad-info">
-                    <img src="https://img.icons8.com/color/48/motorcycle.png" alt="peya">
-                    <p id="ad-text">¿Hambre? Pedí en <b>PedidosYa</b></p>
-                </div>
-                <i class="fas fa-chevron-right"></i>
-            </a>
-        </footer>
-
-        <div id="expense-modal" class="modal hidden">
-            <div class="modal-sheet">
-                <div class="modal-handle"></div>
-                <h3 data-i18n="modal_title">Agregar Gasto</h3>
-                <input type="text" id="exp-title" class="modern-input" data-i18n-placeholder="placeholder_expense">
-                <input type="number" id="exp-amount" class="modern-input" data-i18n-placeholder="placeholder_amount" inputmode="decimal">
-                
-                <label class="modal-label" data-i18n="label_payer">¿Quién pagó?</label>
-                <select id="exp-payer" class="modern-select"></select>
-
-                <label class="modal-label" data-i18n="label_participants">¿Quiénes dividen?</label>
-                <div id="exp-participants" class="participants-grid"></div>
-
-                <div class="modal-footer">
-                    <button class="btn-text" onclick="closeExpenseModal()" data-i18n="btn_cancel">Cancelar</button>
-                    <button class="btn-primary" onclick="saveExpense()" data-i18n="btn_save">Guardar</button>
-                </div>
+        </div>
+        <div class="form-group">
+            <label>Participantes</label>
+            <div class="member-list" id="member-list-setup"></div>
+            <div class="add-member-row">
+                <input class="form-input" id="member-input" type="text" placeholder="Nombre...">
+                <button class="btn-secondary" onclick="addMemberToSetup()">Añadir</button>
             </div>
         </div>
     </div>
-    <script src="script.js"></script>
+    <div class="setup-footer">
+        <button class="btn-primary" onclick="createNewEvent()">
+            <i class="fa-solid fa-check"></i> Crear Evento
+        </button>
+    </div>
+</section>
+
+<section id="screen-dashboard" class="screen">
+    <div class="dash-header">
+        <div class="dash-header-row">
+            <button class="icon-btn" onclick="showScreen('screen-history')"><i class="fa-solid fa-arrow-left"></i></button>
+            <div class="dash-title" id="dash-event-title">Evento</div>
+            <div class="dash-actions">
+                <button class="icon-btn" onclick="shareEvent()"><i class="fa-solid fa-share-nodes"></i></button>
+                <button class="icon-btn" onclick="deleteCurrentEvent()"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        </div>
+        <div class="tabs">
+            <div class="tab active" id="tab-gastos-btn" onclick="switchTab('gastos')"><i class="fa-solid fa-receipt"></i> Gastos</div>
+            <div class="tab" id="tab-saldos-btn" onclick="switchTab('saldos')"><i class="fa-solid fa-chart-pie"></i> Saldos</div>
+            <div class="tab" id="tab-pagos-btn" onclick="switchTab('pagos')"><i class="fa-solid fa-hand-holding-dollar"></i> Pagos</div>
+        </div>
+    </div>
+
+    <div id="tab-content-gastos" class="tab-content active"></div>
+    <div id="tab-content-saldos" class="tab-content"></div>
+    <div id="tab-content-pagos" class="tab-content"></div>
+
+    <button class="fab" id="btn-add-expense" onclick="openExpenseModal()">
+        <i class="fa-solid fa-plus"></i> Agregar Gasto
+    </button>
+
+    <div class="pedidosya-banner">
+        <div class="pedidosya-content">
+            <div class="pedidosya-logo">PedidosYa</div>
+            <div class="pedidosya-text">¿Hambre en el grupo?</div>
+        </div>
+        <button class="pedidosya-cta" onclick="window.open('https://www.pedidosya.com.ar', '_blank')">Pedir</button>
+    </div>
+</section>
+
+<div class="modal-overlay" id="modal-expense">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-title">Nuevo Gasto</div>
+        <div class="form-group">
+            <label>Descripción</label>
+            <input class="form-input" id="exp-desc" type="text" placeholder="Ej: Pizza, Nafta...">
+        </div>
+        <div class="form-group">
+            <label>Monto</label>
+            <input class="form-input" id="exp-amount" type="number" inputmode="decimal" placeholder="0.00">
+        </div>
+        <div class="form-group">
+            <label>¿Quién pagó?</label>
+            <div class="payer-grid" id="modal-payer-grid"></div>
+        </div>
+        <button class="btn-primary" onclick="saveExpense()">Guardar Gasto</button>
+        <button class="btn-secondary" style="width:100%; margin-top:10px" onclick="closeModal()">Cancelar</button>
+    </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="script.js"></script>
 </body>
 </html>
