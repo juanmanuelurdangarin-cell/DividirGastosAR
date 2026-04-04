@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DivideGastos - App de Amigos</title>
+    <title>DivideGastos Pro</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -11,20 +11,26 @@
     <div id="app">
         <header>
             <div class="header-actions">
-                <button class="icon-btn" onclick="shareResults()" id="btn-share" title="Compartir">
+                <button class="icon-btn" onclick="showHistory()" title="Mis Eventos">
+                    <i class="fas fa-list-ul"></i>
+                </button>
+                <button class="icon-btn" onclick="shareEventLink()" id="btn-share" title="Compartir Evento Editable">
                     <i class="fas fa-share-nodes"></i>
                 </button>
-                <button class="icon-btn" onclick="resetApp()" title="Reiniciar todo" style="margin-left: 10px; color: #e74c3c;">
-                    <i class="fas fa-trash-can"></i>
-                </button>
             </div>
-            <h1 id="event-title-display">Nueva Juntada</h1>
+            <h1 id="event-title-display">DivideGastos</h1>
             <div class="currency-badge" id="currency-display">ARS</div>
         </header>
 
+        <section id="history-screen" class="card hidden">
+            <h2>Mis Eventos Guardados</h2>
+            <div id="history-list"></div>
+            <button class="btn-main" onclick="createNewEvent()">+ Crear Nuevo Evento</button>
+        </section>
+
         <section id="setup-screen" class="card">
             <h2>Configuración del Evento</h2>
-            <input type="text" id="event-title" placeholder="Título del evento (ej: Asado)">
+            <input type="text" id="event-title" placeholder="Título (ej: Viaje Bariloche)">
             <select id="event-currency">
                 <option value="$">Pesos (ARS)</option>
                 <option value="USD">Dólares (USD)</option>
@@ -35,46 +41,32 @@
                 <button class="btn-secondary" onclick="addFriend()">Añadir</button>
             </div>
             <ul id="friends-list"></ul>
-            <button class="btn-main" onclick="startEvent()">Empezar Evento</button>
+            <button class="btn-main" onclick="startEvent()">Guardar y Empezar</button>
         </section>
 
         <section id="main-screen" class="hidden">
             <nav class="tabs">
                 <button class="tab-btn active" onclick="showTab('gastos')">Gastos</button>
                 <button class="tab-btn" onclick="showTab('saldos')">Saldos</button>
-                <button class="tab-btn" onclick="showTab('deudas')">Transferencias</button>
+                <button class="tab-btn" onclick="showTab('deudas')">Pagos</button>
             </nav>
-
             <div id="tab-gastos" class="tab-content">
                 <div id="expenses-list"></div>
                 <button class="fab" onclick="openExpenseModal()">+</button>
             </div>
-
-            <div id="tab-saldos" class="tab-content hidden">
-                <div id="balances-list"></div>
-            </div>
-
-            <div id="tab-deudas" class="tab-content hidden">
-                <div id="settlements-list"></div>
-            </div>
+            <div id="tab-saldos" class="tab-content hidden"><div id="balances-list"></div></div>
+            <div id="tab-deudas" class="tab-content hidden"><div id="settlements-list"></div></div>
         </section>
 
         <div id="expense-modal" class="modal hidden">
             <div class="modal-content">
-                <h3 id="modal-title">Agregar Gasto</h3>
-                <input type="text" id="exp-title" placeholder="¿En qué se gastó?">
+                <h3 id="modal-title">Gasto</h3>
+                <input type="text" id="exp-title" placeholder="¿Qué se compró?">
                 <input type="number" id="exp-amount" placeholder="Monto" step="0.01" inputmode="decimal">
-                
-                <label>¿Quién pagó?</label>
+                <label>Pagó:</label>
                 <select id="exp-payer"></select>
-
-                <label>¿Quiénes participan?</label>
-                <div class="selection-tools">
-                    <button class="btn-small" onclick="toggleAllFriends(true)">Todos</button>
-                    <button class="btn-small" onclick="toggleAllFriends(false)">Ninguno</button>
-                </div>
+                <label>Participan:</label>
                 <div id="exp-participants"></div>
-
                 <div class="modal-actions">
                     <button class="btn-cancel" onclick="closeExpenseModal()">Cancelar</button>
                     <button class="btn-main" onclick="saveExpense()">Guardar</button>
