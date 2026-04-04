@@ -14,8 +14,9 @@
                 <button class="icon-btn" onclick="showHistory()" title="Mis Eventos">
                     <i class="fas fa-list-ul"></i>
                 </button>
-                <button class="icon-btn" onclick="shareEventLink()" id="btn-share" title="Compartir Link Editable">
+                <button class="icon-btn" onclick="shareEventLink()" id="btn-share" title="Compartir Actualización">
                     <i class="fas fa-share-nodes"></i>
+                    <span id="share-dot" class="dot hidden"></span>
                 </button>
                 <button class="icon-btn" onclick="goBackToSetup()" id="btn-back" title="Editar Miembros">
                     <i class="fas fa-user-plus"></i>
@@ -70,20 +71,17 @@
 
         <div id="expense-modal" class="modal hidden">
             <div class="modal-content">
-                <h3 id="modal-title">Agregar Gasto</h3>
+                <h3 id="modal-title">Gasto</h3>
                 <input type="text" id="exp-title" placeholder="¿En qué se gastó?">
                 <input type="number" id="exp-amount" placeholder="Monto" step="0.01" inputmode="decimal">
-                
                 <label>¿Quién pagó?</label>
                 <select id="exp-payer"></select>
-
                 <label>¿Quiénes participan?</label>
                 <div class="selection-tools">
                     <button class="btn-small" onclick="toggleAllFriends(true)">Todos</button>
                     <button class="btn-small" onclick="toggleAllFriends(false)">Ninguno</button>
                 </div>
                 <div id="exp-participants"></div>
-
                 <div class="modal-actions">
                     <button class="btn-cancel" onclick="closeExpenseModal()">Cancelar</button>
                     <button class="btn-main" onclick="saveExpense()">Guardar</button>
