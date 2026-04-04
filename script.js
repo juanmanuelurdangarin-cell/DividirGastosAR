@@ -1,8 +1,8 @@
 let currentEvent = { id: Date.now(), title: "", currency: "$", friends: [], expenses: [] };
 let allEvents = [];
 let editingIndex = null;
+let hasUnsharedChanges = false;
 
-// INICIALIZACIÓN
 window.onload = () => {
     const saved = localStorage.getItem('divideGastos_v2');
     if (saved) allEvents = JSON.parse(saved);
@@ -13,13 +13,19 @@ window.onload = () => {
     if (sharedData) {
         try {
             const decoded = JSON.parse(atob(sharedData));
-            currentEvent = decoded;
-            if (!allEvents.find(e => e.id === decoded.id)) {
+            // Si el evento ya existe en mi historial, lo actualizo. Si no, lo agrego.
+            const existingIdx = allEvents.findIndex(e => e.id === decoded.id);
+            if (existingIdx > -1) {
+                allEvents[existingIdx] = decoded;
+            } else {
                 allEvents.push(decoded);
-                saveToLocal();
             }
+            currentEvent = decoded;
+            saveToLocal();
+            // Limpiamos la URL para que el F5 no cargue datos viejos
+            window.history.replaceState({}, document.title, window.location.pathname);
             showMainScreen();
-        } catch (e) { console.error("Error al cargar link compartido"); }
+        } catch (e) { console.error("Error link compartido"); }
     } else if (allEvents.length > 0) {
         showHistory();
     }
@@ -29,7 +35,12 @@ function saveToLocal() {
     localStorage.setItem('divideGastos_v2', JSON.stringify(allEvents));
 }
 
-// NAVEGACIÓN Y MULTI-EVENTO
+function notifyChange() {
+    hasUnsharedChanges = true;
+    document.getElementById('share-dot').classList.remove('hidden');
+}
+
+// NAVEGACIÓN
 function showHistory() {
     document.getElementById('setup-screen').classList.add('hidden');
     document.getElementById('main-screen').classList.add('hidden');
@@ -49,7 +60,6 @@ function createNewEvent() {
     currentEvent = { id: Date.now(), title: "", currency: "$", friends: [], expenses: [] };
     document.getElementById('history-screen').classList.add('hidden');
     document.getElementById('setup-screen').classList.remove('hidden');
-    document.getElementById('event-title').value = "";
     renderFriendsList();
 }
 
@@ -62,9 +72,10 @@ function goBackToSetup() {
     document.getElementById('main-screen').classList.add('hidden');
     document.getElementById('setup-screen').classList.remove('hidden');
     document.getElementById('event-title').value = currentEvent.title;
+    renderFriendsList();
 }
 
-// CONFIGURACIÓN DE MIEMBROS
+// CONFIGURACIÓN
 function addFriend() {
     const input = document.getElementById('friend-name');
     const name = input.value.trim();
@@ -72,6 +83,7 @@ function addFriend() {
         currentEvent.friends.push(name);
         renderFriendsList();
         input.value = "";
+        notifyChange();
     }
 }
 
@@ -81,15 +93,11 @@ function renderFriendsList() {
 }
 
 function startEvent() {
-    if (currentEvent.friends.length < 2) return alert("Agregá al menos 2 personas");
+    if (currentEvent.friends.length < 2) return alert("Mínimo 2 personas");
     currentEvent.title = document.getElementById('event-title').value || "Evento";
     currentEvent.currency = document.getElementById('event-currency').value;
     
-    const idx = allEvents.findIndex(e => e.id === currentEvent.id);
-    if (idx > -1) allEvents[idx] = currentEvent;
-    else allEvents.push(currentEvent);
-    
-    saveToLocal();
+    syncCurrentToAll();
     showMainScreen();
 }
 
@@ -107,9 +115,7 @@ function showMainScreen() {
 // GASTOS
 function openExpenseModal(index = null) {
     editingIndex = index;
-    const modal = document.getElementById('expense-modal');
-    modal.classList.remove('hidden');
-    
+    document.getElementById('expense-modal').classList.remove('hidden');
     const partDiv = document.getElementById('exp-participants');
     partDiv.innerHTML = currentEvent.friends.map(f => `
         <label class="participant-item">
@@ -130,14 +136,6 @@ function openExpenseModal(index = null) {
     }
 }
 
-function closeExpenseModal() {
-    document.getElementById('expense-modal').classList.add('hidden');
-}
-
-function toggleAllFriends(val) {
-    document.querySelectorAll('input[name="p-check"]').forEach(c => c.checked = val);
-}
-
 function saveExpense() {
     const title = document.getElementById('exp-title').value;
     const amount = parseFloat(document.getElementById('exp-amount').value);
@@ -150,29 +148,32 @@ function saveExpense() {
     if (editingIndex !== null) currentEvent.expenses[editingIndex] = exp;
     else currentEvent.expenses.push(exp);
 
-    const idx = allEvents.findIndex(e => e.id === currentEvent.id);
-    allEvents[idx] = currentEvent;
-    saveToLocal();
+    syncCurrentToAll();
     calculateAll();
     closeExpenseModal();
+    notifyChange();
 }
 
-// CÁLCULOS Y RENDER
+function syncCurrentToAll() {
+    const idx = allEvents.findIndex(e => e.id === currentEvent.id);
+    if (idx > -1) allEvents[idx] = currentEvent;
+    else allEvents.push(currentEvent);
+    saveToLocal();
+}
+
+// CÁLCULOS
 function calculateAll() {
     let balances = {};
     currentEvent.friends.forEach(f => balances[f] = 0);
-
     currentEvent.expenses.forEach(e => {
         balances[e.payer] += e.amount;
         const share = e.amount / e.participants.length;
         e.participants.forEach(p => balances[p] -= share);
     });
-
     renderUI(balances);
 }
 
 function renderUI(balances) {
-    // Gastos
     document.getElementById('expenses-list').innerHTML = currentEvent.expenses.map((e, i) => `
         <div class="expense-card" onclick="openExpenseModal(${i})">
             <div><strong>${e.title}</strong><br><small>Pagó ${e.payer}</small></div>
@@ -180,17 +181,10 @@ function renderUI(balances) {
         </div>
     `).join('') || '<p style="text-align:center; opacity:0.5; margin-top:20px;">No hay gastos aún</p>';
 
-    // Saldos
     document.getElementById('balances-list').innerHTML = currentEvent.friends.map(f => `
-        <div class="balance-item">
-            <span>${f}</span>
-            <span class="${balances[f] >= 0 ? 'positive' : 'negative'}">
-                ${balances[f] >= 0 ? '+' : ''}${balances[f].toFixed(2)}
-            </span>
-        </div>
+        <div class="balance-item"><span>${f}</span><span class="${balances[f] >= 0 ? 'positive' : 'negative'}">${balances[f].toFixed(2)}</span></div>
     `).join('');
 
-    // Deudas
     let html = "";
     let d = [], c = [];
     for(let f in balances) {
@@ -201,7 +195,7 @@ function renderUI(balances) {
         c.forEach(cre => {
             if(deb.a > 0 && cre.a > 0) {
                 let m = Math.min(deb.a, cre.a);
-                html += `<div class="card">💸 <b>${deb.n}</b> le paga <b>${m.toFixed(2)} ${currentEvent.currency}</b> a <b>${cre.n}</b></div>`;
+                html += `<div class="card">💸 <b>${deb.n}</b> paga <b>${m.toFixed(2)} ${currentEvent.currency}</b> a <b>${cre.n}</b></div>`;
                 deb.a -= m; cre.a -= m;
             }
         });
@@ -209,23 +203,27 @@ function renderUI(balances) {
     document.getElementById('settlements-list').innerHTML = html || '<p style="text-align:center;">¡Están a mano!</p>';
 }
 
-// COMPARTIR LINK EDITABLE
 function shareEventLink() {
     const dataString = btoa(JSON.stringify(currentEvent));
     const shareUrl = `${window.location.origin}${window.location.pathname}?data=${dataString}`;
     
     if (navigator.share) {
-        navigator.share({ title: currentEvent.title, url: shareUrl });
+        navigator.share({ title: currentEvent.title, url: shareUrl }).then(() => {
+            hasUnsharedChanges = false;
+            document.getElementById('share-dot').classList.add('hidden');
+        });
     } else {
         navigator.clipboard.writeText(shareUrl);
-        alert("Link editable copiado al portapapeles.");
+        alert("Link actualizado copiado al portapapeles. ¡Reenvialo al grupo!");
+        hasUnsharedChanges = false;
+        document.getElementById('share-dot').classList.add('hidden');
     }
 }
 
-function updatePayerList() {
-    document.getElementById('exp-payer').innerHTML = currentEvent.friends.map(f => `<option value="${f}">${f}</option>`).join('');
-}
-
+// UTILS
+function closeExpenseModal() { document.getElementById('expense-modal').classList.add('hidden'); }
+function updatePayerList() { document.getElementById('exp-payer').innerHTML = currentEvent.friends.map(f => `<option value="${f}">${f}</option>`).join(''); }
+function toggleAllFriends(val) { document.querySelectorAll('input[name="p-check"]').forEach(c => c.checked = val); }
 function showTab(name) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
