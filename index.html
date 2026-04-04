@@ -3,40 +3,53 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>DivideGastos Pro</title>
+<title>DivideGastos Pro | vFinal</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
     :root {
         --bg: #0d0f14; --surface: #161920; --surface2: #1e2230; --border: #2a2f40;
-        --accent: #6c63ff; --green: #1de9b6; --red: #ff6584; --text: #e8eaf0; --muted: #7a7f99; --radius: 16px;
+        --accent: #ff0045; --accent-soft: rgba(255, 0, 69, 0.1);
+        --green: #1de9b6; --red: #ff6584; --text: #e8eaf0; --muted: #7a7f99; --radius: 18px;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; min-height: 100vh; }
     
     .screen { display: none; min-height: 100vh; flex-direction: column; }
-    .screen.active { display: flex; animation: fadeIn 0.2s ease; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .screen.active { display: flex; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; height: 70px; }
+    header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; height: 75px; }
     .user-box { display: flex; align-items: center; gap: 12px; }
-    .user-box img { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--accent); background: var(--surface2); }
+    .user-box img { width: 38px; height: 38px; border-radius: 50%; border: 2px solid var(--accent); }
 
     .container { padding: 20px; max-width: 600px; margin: 0 auto; width: 100%; }
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 12px; }
     
-    .btn-main { width: 100%; padding: 18px; border-radius: 14px; border: none; font-weight: 800; cursor: pointer; background: var(--accent); color: white; font-size: 1rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 15px; position: relative; overflow: hidden; transition: 0.2s; }
+    .card:active { transform: scale(0.98); background: var(--surface2); }
     
-    #screen-loading { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-    .loader { width: 45px; height: 45px; border: 4px solid var(--surface2); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .tabs-nav { display: flex; background: var(--surface2); padding: 6px; border-radius: 16px; margin-bottom: 20px; gap: 5px; }
+    .tab-btn { flex: 1; padding: 12px; border: none; background: none; color: var(--muted); font-weight: 700; cursor: pointer; border-radius: 12px; font-size: 0.75rem; transition: 0.3s; }
+    .tab-btn.active { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(255, 0, 69, 0.3); }
 
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: flex-end; z-index: 1000; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.92); display: none; align-items: flex-end; z-index: 1000; padding: 10px; }
     .modal-overlay.active { display: flex; }
-    .modal { background: var(--surface); width: 100%; border-radius: 24px 24px 0 0; padding: 25px; max-height: 90vh; overflow-y: auto; }
+    .modal { background: var(--surface); width: 100%; border-radius: 28px; padding: 25px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border); }
     
-    input, select { width: 100%; background: var(--surface2); border: 1px solid var(--border); padding: 15px; border-radius: 12px; color: white; margin-bottom: 15px; }
-    .fab { position: fixed; bottom: 30px; right: 25px; width: 65px; height: 65px; background: var(--accent); color: white; border-radius: 50%; border: none; font-size: 26px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 15px rgba(0,0,0,0.3); }
+    input, select { width: 100%; background: var(--surface2); border: 1px solid var(--border); padding: 16px; border-radius: 14px; color: white; margin-bottom: 15px; font-size: 1rem; outline: none; }
+    input:focus { border-color: var(--accent); }
+    
+    .btn-main { width: 100%; padding: 18px; border-radius: 16px; border: none; font-weight: 800; cursor: pointer; background: var(--accent); color: white; font-size: 1rem; transition: 0.2s; }
+    .btn-main:active { transform: scale(0.96); }
+
+    .fab { position: fixed; bottom: 30px; right: 25px; width: 65px; height: 65px; background: var(--accent); color: white; border-radius: 50%; border: none; font-size: 28px; box-shadow: 0 10px 25px rgba(255, 0, 69, 0.4); z-index: 90; display: flex; align-items: center; justify-content: center; }
+
+    .part-chip { display: inline-flex; align-items: center; background: var(--accent-soft); color: var(--accent); padding: 8px 14px; border-radius: 20px; margin: 0 8px 8px 0; font-size: 0.85rem; font-weight: 700; }
+    .part-chip i { margin-left: 8px; cursor: pointer; }
+
+    #screen-loading { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    .loader { width: 50px; height: 50px; border: 5px solid var(--surface2); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -45,34 +58,79 @@
 </head>
 <body>
 
-<div id="screen-loading"><div class="loader"></div><p style="margin-top:15px; color:var(--muted); font-size:0.8rem;">Verificando sesión...</p></div>
+<div id="screen-loading"><div class="loader"></div></div>
 
 <div id="screen-login" class="screen">
     <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:40px; text-align:center;">
-        <i class="fa-solid fa-wallet fa-4x" style="color:var(--accent); margin-bottom:20px;"></i>
-        <h1 style="font-family:'Syne'; margin-bottom:10px;">DivideGastos Pro</h1>
-        <p style="color:var(--muted); margin-bottom:40px;">Tu billetera grupal en la nube.</p>
-        <button class="btn-main" onclick="login()"><i class="fa-brands fa-google"></i> Entrar con Google</button>
+        <div style="width:100px; height:100px; background:var(--accent); border-radius:30px; display:flex; align-items:center; justify-content:center; margin-bottom:25px; transform: rotate(-5deg); box-shadow: 0 15px 35px rgba(255, 0, 69, 0.3);">
+            <i class="fa-solid fa-bolt-lightning fa-3x" style="color:white;"></i>
+        </div>
+        <h1 style="font-family:'Syne'; font-size:2.4rem; font-weight:800; letter-spacing:-1px; line-height:1;">DivideGastos<br><span style="color:var(--accent)">PRO</span></h1>
+        <p style="color:var(--muted); margin: 20px 0 40px; font-size:1.1rem;">La app definitiva para grupos de amigos.</p>
+        <button class="btn-main" onclick="login()"><i class="fa-brands fa-google" style="margin-right:10px;"></i> Ingresar con Google</button>
     </div>
 </div>
 
 <div id="screen-main" class="screen">
     <header>
-        <div class="user-box"><img id="h-img" src=""><span id="h-name"></span></div>
-        <button onclick="logout()" style="background:none; border:none; color:var(--red); font-size:1.2rem;"><i class="fa-solid fa-power-off"></i></button>
+        <div class="user-box">
+            <img id="header-img" src="">
+            <div>
+                <p style="font-size:0.7rem; color:var(--muted); font-weight:bold; text-transform:uppercase;">Hola,</p>
+                <span id="header-name" style="font-weight:800; font-family:'Syne';">Usuario</span>
+            </div>
+        </div>
+        <button onclick="logout()" style="background:none; border:none; color:var(--muted); font-size:1.2rem;"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
     </header>
     <div class="container">
-        <h2 style="font-family:'Syne'; margin-bottom:20px;">Mis Eventos</h2>
+        <h2 style="font-family:'Syne'; font-size:1.8rem; margin-bottom:20px;">Mis Eventos</h2>
         <div id="event-list"></div>
     </div>
-    <button class="fab" onclick="openModal('modal-new')"><i class="fa-solid fa-plus"></i></button>
+    <button class="fab" onclick="openModalCreate()"><i class="fa-solid fa-plus"></i></button>
 </div>
 
-<div id="modal-new" class="modal-overlay" onclick="if(event.target==this)closeModal('modal-new')">
+<div id="screen-detail" class="screen">
+    <header>
+        <button onclick="showScreen('screen-main')" style="background:none; border:none; color:white; font-size:1.2rem;"><i class="fa-solid fa-chevron-left"></i></button>
+        <h3 id="det-title" style="font-family:'Syne'; font-size:1.1rem; flex:1; text-align:center;">Evento</h3>
+        <button onclick="shareEvent()" style="background:none; border:none; color:var(--accent); font-size:1.2rem;"><i class="fa-solid fa-share-nodes"></i></button>
+    </header>
+    <div class="container">
+        <div class="tabs-nav">
+            <button class="tab-btn active" onclick="switchTab('gastos', this)">GASTOS</button>
+            <button class="tab-btn" onclick="switchTab('saldos', this)">SALDOS</button>
+            <button class="tab-btn" onclick="switchTab('historial', this)">HISTORIAL</button>
+        </div>
+        <div id="tab-area"></div>
+    </div>
+    <button class="fab" onclick="openModal('modal-add-expense')"><i class="fa-solid fa-receipt"></i></button>
+</div>
+
+<div id="modal-new-event" class="modal-overlay" onclick="if(event.target==this)closeModal('modal-new-event')">
     <div class="modal">
-        <h2 style="margin-bottom:15px;">Nuevo Evento</h2>
+        <h2 style="font-family:'Syne'; margin-bottom:15px;">Crear Evento</h2>
         <input type="text" id="new-name" placeholder="Nombre del evento">
-        <button class="btn-main" id="btn-create" onclick="createEvent()">CREAR</button>
+        <label style="font-size:0.8rem; color:var(--muted); font-weight:bold;">SUMAR AMIGOS:</label>
+        <div id="setup-parts-list" style="margin:10px 0;"></div>
+        <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <input type="text" id="in-part-name" placeholder="Nombre" style="margin-bottom:0;">
+            <button onclick="addPartToSetup()" style="background:var(--accent); border:none; color:white; padding:0 20px; border-radius:14px;"><i class="fa-solid fa-user-plus"></i></button>
+        </div>
+        <select id="new-cur"><option value="ARS">Pesos (ARS)</option><option value="USD">Dólares (USD)</option></select>
+        <button id="btn-create" class="btn-main" onclick="dbCreateEvent()">LISTO, CREAR</button>
+    </div>
+</div>
+
+<div id="modal-add-expense" class="modal-overlay" onclick="if(event.target==this)closeModal('modal-add-expense')">
+    <div class="modal">
+        <h2 style="margin-bottom:15px; font-family:'Syne';">Nuevo Gasto</h2>
+        <input type="text" id="ex-desc" placeholder="¿Qué compraron?">
+        <input type="number" id="ex-amount" placeholder="Monto total">
+        <label style="font-size:0.8rem; color:var(--muted); font-weight:bold;">¿QUIÉN PAGÓ?</label>
+        <select id="ex-payer"></select>
+        <label style="font-size:0.8rem; color:var(--muted); font-weight:bold;">¿PARA QUIÉNES?</label>
+        <div id="ex-list-checks" style="margin-top:10px; max-height:200px; overflow-y:auto;"></div>
+        <button class="btn-main" onclick="dbAddExpense()">GUARDAR GASTO</button>
     </div>
 </div>
 
@@ -90,13 +148,11 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // Fix de carga: Si en 4 segundos no hay respuesta, mostramos el login por las dudas
-    const loadTimeout = setTimeout(() => {
-        if (!auth.currentUser) showScreen('screen-login');
-    }, 4000);
+    let currentEvent = null;
+    let activeTab = 'gastos';
+    let tempParticipants = [];
 
     function showScreen(id) {
-        clearTimeout(loadTimeout);
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         document.getElementById('screen-loading').style.display = 'none';
@@ -104,8 +160,8 @@
 
     auth.onAuthStateChanged(user => {
         if (user) {
-            document.getElementById('h-name').innerText = user.displayName.split(' ')[0];
-            document.getElementById('h-img').src = user.photoURL;
+            document.getElementById('header-name').innerText = user.displayName.split(' ')[0];
+            document.getElementById('header-img').src = user.photoURL;
             showScreen('screen-main');
             loadEvents();
         } else {
@@ -114,38 +170,138 @@
     });
 
     async function login() {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        try { await auth.signInWithPopup(provider); } catch(e) { alert("Error al conectar."); }
+        try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); } catch(e) { alert("Error al entrar."); }
     }
 
     function logout() { auth.signOut().then(() => location.reload()); }
+
+    function openModalCreate() {
+        tempParticipants = [{id: auth.currentUser.uid, name: auth.currentUser.displayName, photo: auth.currentUser.photoURL}];
+        renderSetupParts();
+        openModal('modal-new-event');
+    }
+
+    function addPartToSetup() {
+        const inp = document.getElementById('in-part-name');
+        if(!inp.value.trim()) return;
+        tempParticipants.push({id: 't_' + Date.now(), name: inp.value.trim()});
+        inp.value = '';
+        renderSetupParts();
+    }
+
+    function renderSetupParts() {
+        document.getElementById('setup-parts-list').innerHTML = tempParticipants.map(p => `
+            <span class="part-chip">${p.name} ${p.id !== auth.currentUser.uid ? `<i class="fa-solid fa-xmark" onclick="tempParticipants=tempParticipants.filter(x=>x.id!=='${p.id}');renderSetupParts()"></i>` : ''}</span>
+        `).join('');
+    }
 
     function loadEvents() {
         db.collection('events').where('participantsIds', 'array-contains', auth.currentUser.uid)
         .onSnapshot(snap => {
             const list = document.getElementById('event-list');
             if(snap.empty) {
-                list.innerHTML = '<p style="text-align:center; padding:40px; color:var(--muted);">No hay eventos.</p>';
+                list.innerHTML = `<div style="text-align:center; padding:60px; color:var(--muted); opacity:0.5;"><i class="fa-solid fa-face-meh fa-4x"></i><p style="margin-top:15px; font-weight:bold;">Nada por acá...</p></div>`;
                 return;
             }
             list.innerHTML = snap.docs.map(doc => `
-                <div class="card"><b>${doc.data().name}</b></div>
+                <div class="card" onclick="openEvent('${doc.id}')">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <b style="font-size:1.2rem; font-family:'Syne'; color:white;">${doc.data().name}</b><br>
+                            <span style="font-size:0.75rem; color:var(--muted); text-transform:uppercase; font-weight:800; letter-spacing:1px;">${doc.data().participants.length} integrantes</span>
+                        </div>
+                        <div style="background:var(--accent-soft); color:var(--accent); padding:8px 12px; border-radius:12px; font-weight:800; font-size:0.8rem;">${doc.data().currency}</div>
+                    </div>
+                </div>
             `).join('');
         });
     }
 
-    async function createEvent() {
+    async function dbCreateEvent() {
         const name = document.getElementById('new-name').value;
         if(!name) return;
-        document.getElementById('btn-create').disabled = true;
-        await db.collection('events').add({
-            name, 
-            participantsIds: [auth.currentUser.uid],
-            participants: [{id: auth.currentUser.uid, name: auth.currentUser.displayName}],
-            expenses: []
+        const btn = document.getElementById('btn-create');
+        btn.disabled = true; btn.innerText = "CREANDO...";
+        try {
+            const doc = await db.collection('events').add({
+                name, currency: document.getElementById('new-cur').value,
+                participantsIds: tempParticipants.map(p => p.id),
+                participants: tempParticipants,
+                expenses: [],
+                logs: [{u: auth.currentUser.displayName, a: "creó el evento", d: Date.now()}]
+            });
+            closeModal('modal-new-event');
+            openEvent(doc.id);
+        } catch(e) { alert("Error"); }
+        finally { btn.disabled = false; btn.innerText = "LISTO, CREAR"; }
+    }
+
+    function openEvent(id) {
+        db.collection('events').doc(id).onSnapshot(doc => {
+            if(!doc.exists) return;
+            currentEvent = {id: doc.id, ...doc.data()};
+            document.getElementById('det-title').innerText = currentEvent.name;
+            renderExpenseForm();
+            renderTab();
+            showScreen('screen-detail');
         });
-        closeModal('modal-new');
-        document.getElementById('btn-create').disabled = false;
+    }
+
+    function renderExpenseForm() {
+        document.getElementById('ex-payer').innerHTML = currentEvent.participants.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        document.getElementById('ex-list-checks').innerHTML = currentEvent.participants.map(p => `
+            <label style="display:flex; align-items:center; gap:15px; padding:15px; background:var(--surface2); border-radius:14px; margin-bottom:10px; cursor:pointer; font-weight:bold;">
+                <input type="checkbox" value="${p.id}" checked class="ex-check" style="width:20px; height:20px; margin-bottom:0; accent-color:var(--accent);"> ${p.name}
+            </label>
+        `).join('');
+    }
+
+    async function dbAddExpense() {
+        const desc = document.getElementById('ex-desc').value;
+        const amount = parseFloat(document.getElementById('ex-amount').value);
+        const payerId = document.getElementById('ex-payer').value;
+        const included = Array.from(document.querySelectorAll('.ex-check:checked')).map(c => c.value);
+        if(!desc || !amount || !included.length) return alert("Faltan datos");
+
+        const exp = { id: Date.now(), desc, amount, payerId, includedIds: included, payerName: currentEvent.participants.find(p => p.id === payerId).name, d: Date.now() };
+        await db.collection('events').doc(currentEvent.id).update({
+            expenses: firebase.firestore.FieldValue.arrayUnion(exp),
+            logs: firebase.firestore.FieldValue.arrayUnion({u: auth.currentUser.displayName, a: `sumó ${desc} por $${amount}`, d: Date.now()})
+        });
+        closeModal('modal-add-expense');
+    }
+
+    function switchTab(t, btn) {
+        activeTab = t;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderTab();
+    }
+
+    function renderTab() {
+        const area = document.getElementById('tab-area');
+        if(activeTab === 'gastos') {
+            area.innerHTML = currentEvent.expenses.length ? currentEvent.expenses.map(e => `
+                <div class="card" style="display:flex; justify-content:space-between; align-items:center; border-left:4px solid var(--accent)">
+                    <div><b style="color:white; font-size:1.1rem;">${e.desc}</b><br><small style="color:var(--muted)">Pagó ${e.payerName}</small></div>
+                    <div style="color:var(--accent); font-weight:800; font-size:1.1rem;">$${e.amount}</div>
+                </div>
+            `).join('') : '<p style="text-align:center; padding:40px; color:var(--muted);">Sin gastos cargados.</p>';
+        } else if(activeTab === 'historial') {
+            area.innerHTML = currentEvent.logs.slice().reverse().map(l => `
+                <div style="padding:15px 0; border-bottom:1px solid var(--border); font-size:0.85rem;">
+                    <b style="color:var(--accent)">${l.u}</b> ${l.a}<br><small style="color:var(--muted)">${new Date(l.d).toLocaleString()}</small>
+                </div>
+            `).join('');
+        } else {
+            area.innerHTML = '<div style="text-align:center; padding:40px; color:var(--muted);"><i class="fa-solid fa-calculator fa-3x"></i><p style="margin-top:15px;">Saldos automáticos en camino...</p></div>';
+        }
+    }
+
+    function shareEvent() {
+        const url = window.location.origin + window.location.pathname + "?join=" + currentEvent.id;
+        if(navigator.share) navigator.share({title: currentEvent.name, url});
+        else prompt("Link de invitación:", url);
     }
 
     function openModal(id) { document.getElementById(id).classList.add('active'); }
