@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DivideGastos Pro | v5.6 Premium Ultra</title>
+    <title>DivideGastos Pro | v5.7 Premium Ultra</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 
@@ -91,6 +91,13 @@
         .fab i { transform: rotate(-45deg); }
         .loader { width: 50px; height: 50px; border: 4px solid var(--surface2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .balance-detail {
+            margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border); display: none;
+        }
+        .balance-detail.active { display: block; animation: fadeIn 0.3s ease; }
+        .detail-row { display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 8px; color: var(--muted); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -109,7 +116,7 @@
                 <i class="fa-solid fa-crown fa-3x" style="color:white; transform:rotate(-10deg);"></i>
             </div>
             <h1 style="font-family:'Outfit'; font-size:3.5rem; font-weight:800; line-height:0.9; letter-spacing:-2px;">Divide<br><span style="color:var(--accent)">PREMIUM</span></h1>
-            <p style="color:var(--muted); margin-top:15px;">v5.6 Ultra Colaborativo</p>
+            <p style="color:var(--muted); margin-top:15px;">v5.7 Ultra Colaborativo</p>
             <button class="btn-main" style="margin-top:50px;" onclick="login()">
                 <i class="fa-brands fa-google" style="margin-right:10px;"></i> Ingresar con Google
             </button>
@@ -172,6 +179,8 @@
             <h2 id="expense-modal-title" style="margin-bottom:25px; font-family:'Outfit';">Registrar Gasto</h2>
             <input type="text" id="ex-desc" placeholder="¿Qué se compró?">
             <input type="number" id="ex-amount" placeholder="Monto total ($)" step="0.01">
+            <label style="font-size:0.75rem; color:var(--muted); font-weight:800;">FECHA DEL GASTO</label>
+            <input type="date" id="ex-date" style="color-scheme: dark; margin-top:10px;">
             <label style="font-size:0.75rem; color:var(--muted); font-weight:800;">¿QUIÉN PAGÓ?</label>
             <select id="ex-payer" style="margin-top:10px;"></select>
             <label style="font-size:0.75rem; color:var(--muted); font-weight:800;">¿PARA QUIÉNES?</label>
@@ -238,7 +247,7 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 const joinId = urlParams.get('join');
                 if (joinId) {
-                    // Solo mostramos el evento sin agregar al usuario como participante automáticamente 
+                    await registerEventAccess(user.uid, joinId);
                     window.history.replaceState({}, document.title, window.location.pathname);
                     openEvent(joinId);
                 }
@@ -247,35 +256,55 @@
             } else { showScreen('screen-login'); }
         });
 
-        function loadEvents() {
-            db.collection('events').where('participantsIds', 'array-contains', auth.currentUser.uid)
-            .onSnapshot(snap => {
-                const list = document.getElementById('event-list');
-                if(snap.empty) {
-                    list.innerHTML = `<div style="text-align:center; padding:60px; opacity:0.4;"><i class="fa-solid fa-folder-open fa-3x" style="margin-bottom:15px;"></i><p>No tienes eventos aún.</p></div>`;
-                    return;
-                }
-                list.innerHTML = snap.docs.map(doc => {
-                    const d = doc.data();
-                    return `
-                    <div class="card" onclick="openEvent('${doc.id}')">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div>
-                                <h4 style="font-family:'Outfit'; color:white; font-size:1.2rem;">${d.name}</h4>
-                                <div style="display:flex; gap:12px; margin-top:6px; color:var(--muted); font-size:0.8rem;">
-                                    <span><i class="fa-regular fa-calendar-days" style="margin-right:4px"></i>${d.date ? d.date.split('-').reverse().join('/') : 'Sin fecha'}</span>
-                                    <span><i class="fa-solid fa-users" style="margin-right:4px"></i>${d.participants.length}</span>
-                                </div>
-                            </div>
-                            <button onclick="event.stopPropagation(); toggleMenu('${doc.id}')" style="background:var(--surface2); border:none; color:var(--text); width:44px; height:44px; border-radius:14px;"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-                            <div id="menu-${doc.id}" class="dropdown-menu">
-                                <button class="dropdown-item" onclick="event.stopPropagation(); startEditEvent('${doc.id}')"><i class="fa-solid fa-pen-to-square"></i> Editar</button>
-                                <button class="dropdown-item danger" onclick="event.stopPropagation(); confirmDeleteEvent('${doc.id}', '${d.name.replace(/'/g, "\\'")}')"><i class="fa-solid fa-trash-can"></i> Eliminar</button>
+        async function registerEventAccess(userId, eventId) {
+            await db.collection('user_events').doc(`${userId}_${eventId}`).set({
+                userId: userId,
+                eventId: eventId,
+                lastAccess: Date.now()
+            });
+        }
+
+        async function loadEvents() {
+            const userId = auth.currentUser.uid;
+            
+            // Buscamos eventos donde es participante
+            const snapPart = await db.collection('events').where('participantsIds', 'array-contains', userId).get();
+            // Buscamos eventos que guardó por link
+            const snapSaved = await db.collection('user_events').where('userId', '==', userId).get();
+            
+            const eventIds = new Set();
+            snapPart.forEach(doc => eventIds.add(doc.id));
+            snapSaved.forEach(doc => eventIds.add(doc.data().eventId));
+
+            const list = document.getElementById('event-list');
+            if(eventIds.size === 0) {
+                list.innerHTML = `<div style="text-align:center; padding:60px; opacity:0.4;"><i class="fa-solid fa-folder-open fa-3x" style="margin-bottom:15px;"></i><p>No tienes eventos aún.</p></div>`;
+                return;
+            }
+
+            const eventsData = [];
+            for(let id of eventIds) {
+                const doc = await db.collection('events').doc(id).get();
+                if(doc.exists) eventsData.push({id: doc.id, ...doc.data()});
+            }
+
+            list.innerHTML = eventsData.map(d => `
+                <div class="card" onclick="openEvent('${d.id}')">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <h4 style="font-family:'Outfit'; color:white; font-size:1.2rem;">${d.name}</h4>
+                            <div style="display:flex; gap:12px; margin-top:6px; color:var(--muted); font-size:0.8rem;">
+                                <span><i class="fa-regular fa-calendar-days" style="margin-right:4px"></i>${d.date ? d.date.split('-').reverse().join('/') : 'Sin fecha'}</span>
+                                <span><i class="fa-solid fa-users" style="margin-right:4px"></i>${d.participants.length}</span>
                             </div>
                         </div>
-                    </div>`;
-                }).join('');
-            });
+                        <button onclick="event.stopPropagation(); toggleMenu('${d.id}')" style="background:var(--surface2); border:none; color:var(--text); width:44px; height:44px; border-radius:14px;"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                        <div id="menu-${d.id}" class="dropdown-menu">
+                            <button class="dropdown-item" onclick="event.stopPropagation(); startEditEvent('${d.id}')"><i class="fa-solid fa-pen-to-square"></i> Editar</button>
+                            <button class="dropdown-item danger" onclick="event.stopPropagation(); confirmDeleteEvent('${d.id}', '${d.name.replace(/'/g, "\\'")}')"><i class="fa-solid fa-trash-can"></i> Eliminar</button>
+                        </div>
+                    </div>
+                </div>`).join('');
         }
 
         async function dbSaveEvent() {
@@ -317,13 +346,14 @@
         async function dbSaveExpense() {
             const desc = document.getElementById('ex-desc').value;
             const amount = parseFloat(document.getElementById('ex-amount').value);
+            const date = document.getElementById('ex-date').value || new Date().toISOString().split('T')[0];
             if(!desc || isNaN(amount)) return alert("Completa los datos");
             const included = Array.from(document.querySelectorAll('.ex-check:checked')).map(c => c.value);
             if(included.length === 0) return alert("Selecciona participantes");
             const payerId = document.getElementById('ex-payer').value;
             const payerName = currentEvent.participants.find(p => p.id === payerId).name;
             let newExpenses = [...currentEvent.expenses];
-            const data = { id: editingExpenseId || Date.now(), desc, amount, payerId, payerName, includedIds: included, d: Date.now() };
+            const data = { id: editingExpenseId || Date.now(), desc, amount, date, payerId, payerName, includedIds: included, d: Date.now() };
             if(editingExpenseId) newExpenses = newExpenses.map(e => e.id === editingExpenseId ? data : e);
             else newExpenses.push(data);
             await db.collection('events').doc(currentEvent.id).update({ expenses: newExpenses });
@@ -392,6 +422,13 @@
             }
         }
 
+        function toggleBalanceDetail(pid) {
+            const el = document.getElementById(`detail-${pid}`);
+            const isActive = el.classList.contains('active');
+            document.querySelectorAll('.balance-detail').forEach(d => d.classList.remove('active'));
+            if(!isActive) el.classList.add('active');
+        }
+
         function switchTab(t, btn) {
             activeTab = t;
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -407,7 +444,12 @@
                 area.innerHTML = currentEvent.expenses.slice().reverse().map(e => `
                     <div class="card" onclick='openExpenseModal(${JSON.stringify(e)})' style="border-left:4px solid var(--accent);">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div><b style="font-size:1.1rem; display:block;">${e.desc}</b><span style="font-size:0.8rem; color:var(--muted);">Pagó ${e.payerName}</span></div>
+                            <div>
+                                <b style="font-size:1.1rem; display:block;">${e.desc}</b>
+                                <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">
+                                    <span>Pagó ${e.payerName}</span> • <span>${e.date ? e.date.split('-').reverse().join('/') : 'Sin fecha'}</span>
+                                </div>
+                            </div>
                             <div style="display:flex; align-items:center; gap:15px;">
                                 <b style="color:var(--accent); font-size:1.2rem;">${fmt.format(e.amount)}</b>
                                 <button onclick="event.stopPropagation(); toggleMenu('ex-${e.id}')" style="background:none; border:none; color:var(--muted); font-size:1.1rem;"><i class="fa-solid fa-ellipsis-vertical"></i></button>
@@ -420,9 +462,23 @@
                     </div>`).join('');
             } else if(activeTab === 'saldos') {
                 const b = calculateBalances();
-                area.innerHTML = currentEvent.participants.map(p => `
-                <div class="card"><div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-weight:700;">${p.name}</span><b style="color:${b[p.id] >= 0 ? 'var(--green)' : 'var(--red)'};">${fmt.format(b[p.id])}</b></div></div>`).join('');
+                area.innerHTML = currentEvent.participants.map(p => {
+                    const paidExpenses = currentEvent.expenses.filter(e => e.payerId === p.id);
+                    const partExpenses = currentEvent.expenses.filter(e => e.includedIds.includes(p.id));
+                    return `
+                    <div class="card" onclick="toggleBalanceDetail('${p.id}')">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-weight:700;">${p.name}</span>
+                            <b style="color:${b[p.id] >= 0 ? 'var(--green)' : 'var(--red)'};">${fmt.format(b[p.id])}</b>
+                        </div>
+                        <div id="detail-${p.id}" class="balance-detail">
+                            <p style="font-size:0.7rem; font-weight:800; color:var(--accent); margin-bottom:8px; text-transform:uppercase;">Pagó:</p>
+                            ${paidExpenses.length ? paidExpenses.map(e => `<div class="detail-row"><span>${e.desc} (${e.date.split('-').reverse().join('/')})</span><span style="color:var(--green)">+${fmt.format(e.amount)}</span></div>`).join('') : '<p style="font-size:0.7rem; opacity:0.5; margin-bottom:8px;">Ninguno</p>'}
+                            <p style="font-size:0.7rem; font-weight:800; color:var(--red); margin:8px 0; text-transform:uppercase;">Participó en:</p>
+                            ${partExpenses.length ? partExpenses.map(e => `<div class="detail-row"><span>${e.desc} (${e.date.split('-').reverse().join('/')})</span><span style="color:var(--red)">-${fmt.format(e.amount / e.includedIds.length)}</span></div>`).join('') : '<p style="font-size:0.7rem; opacity:0.5;">Ninguno</p>'}
+                        </div>
+                    </div>`;
+                }).join('');
             } else if(activeTab === 'transfer') {
                 const tr = getOptimalTransfers();
                 area.innerHTML = tr.length ? tr.map(t => `<div class="card" style="border-left:4px solid var(--green);"><p><b>${t.from}</b> debe pagar <span style="color:var(--green); font-weight:800;">${fmt.format(t.amount)}</span> a <b>${t.to}</b></p></div>`).join('') : `<div class="card" style="text-align:center; color:var(--green);">✨ ¡CUENTAS AL DÍA!</div>`;
@@ -445,6 +501,7 @@
             editingEventId = null;
             document.getElementById('event-modal-title').innerText = "Nuevo Evento";
             document.getElementById('ev-name').value = "";
+            document.getElementById('ev-date').value = new Date().toISOString().split('T')[0];
             tempParticipants = [{id: auth.currentUser.uid, name: auth.currentUser.displayName}];
             renderSetupParts();
             openModal('modal-event');
@@ -470,6 +527,7 @@
             document.getElementById('expense-modal-title').innerText = expense ? "Editar Gasto" : "Nuevo Gasto";
             document.getElementById('ex-desc').value = expense ? expense.desc : "";
             document.getElementById('ex-amount').value = expense ? expense.amount : "";
+            document.getElementById('ex-date').value = expense ? expense.date : new Date().toISOString().split('T')[0];
             document.getElementById('btn-delete-expense').style.display = expense ? "block" : "none";
             document.getElementById('ex-payer').innerHTML = currentEvent.participants.map(p => `<option value="${p.id}" ${expense && expense.payerId === p.id ? 'selected' : ''}>${p.name}</option>`).join('');
             document.getElementById('ex-list-checks').innerHTML = currentEvent.participants.map(p => `
@@ -516,7 +574,7 @@
                 participantsIds: firebase.firestore.FieldValue.arrayUnion(newP.id)
             });
             document.getElementById('add-new-part-name').value = "";
-            openModalParticipants(); // Refresca la lista visual
+            openModalParticipants();
         }
     </script>
 </body>
