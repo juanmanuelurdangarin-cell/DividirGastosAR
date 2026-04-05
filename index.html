@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DivideGastos Pro | v5.8 Fix</title>
+    <title>DivideGastos Pro | v5.6 Premium Ultra</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 
@@ -91,12 +91,6 @@
         .fab i { transform: rotate(-45deg); }
         .loader { width: 50px; height: 50px; border: 4px solid var(--surface2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        
-        .balance-detail {
-            margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border); display: none;
-        }
-        .balance-detail.active { display: block; animation: fadeIn 0.3s ease; }
-        .detail-row { display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 8px; color: var(--muted); }
     </style>
 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -115,6 +109,7 @@
                 <i class="fa-solid fa-crown fa-3x" style="color:white; transform:rotate(-10deg);"></i>
             </div>
             <h1 style="font-family:'Outfit'; font-size:3.5rem; font-weight:800; line-height:0.9; letter-spacing:-2px;">Divide<br><span style="color:var(--accent)">PREMIUM</span></h1>
+            <p style="color:var(--muted); margin-top:15px;">v5.6 Ultra Colaborativo</p>
             <button class="btn-main" style="margin-top:50px;" onclick="login()">
                 <i class="fa-brands fa-google" style="margin-right:10px;"></i> Ingresar con Google
             </button>
@@ -186,6 +181,18 @@
         </div>
     </div>
 
+    <div id="modal-confirm" class="modal-overlay">
+        <div class="modal" style="text-align:center;">
+            <div style="font-size:3.5rem; color:var(--red); margin-bottom:15px;"><i class="fa-solid fa-circle-exclamation"></i></div>
+            <h2 style="font-family:'Outfit';">¿Confirmar Acción?</h2>
+            <p id="confirm-msg" style="color:var(--muted); margin:15px 0; line-height:1.5;"></p>
+            <div style="display:flex; gap:12px;">
+                <button style="flex:1; padding:18px; border-radius:18px; background:var(--surface2); color:white; border:none; font-weight:700;" onclick="closeModal('modal-confirm')">Cancelar</button>
+                <button style="flex:1; padding:18px; border-radius:18px; background:var(--red); color:white; border:none; font-weight:800;" id="confirm-btn-action">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
     <div id="modal-manage-participants" class="modal-overlay" onclick="if(event.target==this)closeModal('modal-manage-participants')">
         <div class="modal">
             <h2 style="font-family:'Outfit'; margin-bottom:25px;">Integrantes</h2>
@@ -215,23 +222,23 @@
         let currentEvent = null, activeTab = 'gastos', tempParticipants = [], editingEventId = null, editingExpenseId = null;
 
         async function login() { 
-            const provider = new firebase.auth.GoogleAuthProvider();
-            await auth.signInWithPopup(provider); 
+            try {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                provider.setCustomParameters({ prompt: 'select_account' });
+                await auth.signInWithPopup(provider); 
+            } catch (e) { alert("Error: " + e.message); }
         }
+
         function logout() { auth.signOut().then(() => location.reload()); }
 
         auth.onAuthStateChanged(async user => {
             if (user) {
                 document.getElementById('header-name').innerText = user.displayName.split(' ')[0];
                 document.getElementById('header-img').src = user.photoURL;
-                
-                // Procesar link de invitación
                 const urlParams = new URLSearchParams(window.location.search);
                 const joinId = urlParams.get('join');
                 if (joinId) {
-                    await db.collection('user_events').doc(`${user.uid}_${joinId}`).set({
-                        userId: user.uid, eventId: joinId, lastAccess: Date.now()
-                    });
+                    // Solo mostramos el evento sin agregar al usuario como participante automáticamente 
                     window.history.replaceState({}, document.title, window.location.pathname);
                     openEvent(joinId);
                 }
@@ -240,99 +247,149 @@
             } else { showScreen('screen-login'); }
         });
 
-        async function loadEvents() {
-            const userId = auth.currentUser.uid;
-            const list = document.getElementById('event-list');
-            
-            // ESCUCHA DOBLE: Eventos donde soy participante + Eventos guardados por link
-            db.collection('events').where('participantsIds', 'array-contains', userId)
-            .onSnapshot(snap1 => {
-                db.collection('user_events').where('userId', '==', userId)
-                .onSnapshot(async snap2 => {
-                    const ids = new Set();
-                    snap1.forEach(doc => ids.add(doc.id));
-                    snap2.forEach(doc => ids.add(doc.data().eventId));
-
-                    if(ids.size === 0) {
-                        list.innerHTML = `<div style="text-align:center; padding:60px; opacity:0.4;">
-                            <i class="fa-solid fa-folder-open fa-3x" style="margin-bottom:15px;"></i>
-                            <p>No tienes eventos creados aún.<br>Dale al + para empezar.</p>
-                        </div>`;
-                        return;
-                    }
-
-                    let html = "";
-                    for(let id of ids) {
-                        const doc = await db.collection('events').doc(id).get();
-                        if(doc.exists) {
-                            const d = doc.data();
-                            html += `
-                            <div class="card" onclick="openEvent('${doc.id}')">
-                                <div style="display:flex; justify-content:space-between; align-items:center;">
-                                    <div>
-                                        <h4 style="font-family:'Outfit'; color:white; font-size:1.2rem;">${d.name}</h4>
-                                        <div style="display:flex; gap:12px; margin-top:6px; color:var(--muted); font-size:0.8rem;">
-                                            <span><i class="fa-regular fa-calendar-days"></i> ${d.date ? d.date.split('-').reverse().join('/') : 'S/F'}</span>
-                                            <span><i class="fa-solid fa-users"></i> ${d.participants.length}</span>
-                                        </div>
-                                    </div>
-                                    <button onclick="event.stopPropagation(); toggleMenu('${doc.id}')" style="background:var(--surface2); border:none; color:var(--text); width:44px; height:44px; border-radius:14px;"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-                                    <div id="menu-${doc.id}" class="dropdown-menu">
-                                        <button class="dropdown-item" onclick="event.stopPropagation(); startEditEvent('${doc.id}')"><i class="fa-solid fa-pen-to-square"></i> Editar</button>
-                                    </div>
+        function loadEvents() {
+            db.collection('events').where('participantsIds', 'array-contains', auth.currentUser.uid)
+            .onSnapshot(snap => {
+                const list = document.getElementById('event-list');
+                if(snap.empty) {
+                    list.innerHTML = `<div style="text-align:center; padding:60px; opacity:0.4;"><i class="fa-solid fa-folder-open fa-3x" style="margin-bottom:15px;"></i><p>No tienes eventos aún.</p></div>`;
+                    return;
+                }
+                list.innerHTML = snap.docs.map(doc => {
+                    const d = doc.data();
+                    return `
+                    <div class="card" onclick="openEvent('${doc.id}')">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <h4 style="font-family:'Outfit'; color:white; font-size:1.2rem;">${d.name}</h4>
+                                <div style="display:flex; gap:12px; margin-top:6px; color:var(--muted); font-size:0.8rem;">
+                                    <span><i class="fa-regular fa-calendar-days" style="margin-right:4px"></i>${d.date ? d.date.split('-').reverse().join('/') : 'Sin fecha'}</span>
+                                    <span><i class="fa-solid fa-users" style="margin-right:4px"></i>${d.participants.length}</span>
                                 </div>
-                            </div>`;
-                        }
-                    }
-                    list.innerHTML = html;
-                });
-            });
-        }
-
-        function openEvent(id) {
-            db.collection('events').doc(id).onSnapshot(doc => {
-                if(!doc.exists) return;
-                currentEvent = {id: doc.id, ...doc.data()};
-                document.getElementById('det-title').innerText = currentEvent.name;
-                renderTab();
-                showScreen('screen-detail');
+                            </div>
+                            <button onclick="event.stopPropagation(); toggleMenu('${doc.id}')" style="background:var(--surface2); border:none; color:var(--text); width:44px; height:44px; border-radius:14px;"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                            <div id="menu-${doc.id}" class="dropdown-menu">
+                                <button class="dropdown-item" onclick="event.stopPropagation(); startEditEvent('${doc.id}')"><i class="fa-solid fa-pen-to-square"></i> Editar</button>
+                                <button class="dropdown-item danger" onclick="event.stopPropagation(); confirmDeleteEvent('${doc.id}', '${d.name.replace(/'/g, "\\'")}')"><i class="fa-solid fa-trash-can"></i> Eliminar</button>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
             });
         }
 
         async function dbSaveEvent() {
             const name = document.getElementById('ev-name').value;
             const date = document.getElementById('ev-date').value;
-            if(!name.trim()) return;
-            const data = {
-                name: name.trim(), date,
+            if(!name.trim()) return alert("El nombre es obligatorio");
+            const eventData = {
+                name: name.trim(),
+                date: date,
                 participants: tempParticipants,
                 participantsIds: tempParticipants.map(p => p.id)
             };
-            if(editingEventId) await db.collection('events').doc(editingEventId).update(data);
-            else {
-                data.expenses = [];
-                data.logs = [{u: auth.currentUser.displayName, a: "creó el evento", d: Date.now()}];
-                await db.collection('events').add(data);
+            if(editingEventId) {
+                await db.collection('events').doc(editingEventId).update(eventData);
+            } else {
+                eventData.expenses = [];
+                eventData.logs = [{u: auth.currentUser.displayName, a: "creó el evento", d: Date.now()}];
+                await db.collection('events').add(eventData);
             }
             closeModal('modal-event');
+        }
+
+        function confirmDeleteEvent(id, name) {
+            db.collection('events').doc(id).get().then(doc => {
+                const data = doc.data();
+                if (data.participantsIds[0] !== auth.currentUser.uid) {
+                    alert("⚠️ Solo el creador puede eliminar este evento.");
+                    return;
+                }
+                document.getElementById('confirm-msg').innerText = `¿Eliminar "${name}"? Esta acción es permanente.`;
+                document.getElementById('confirm-btn-action').onclick = async () => {
+                    await db.collection('events').doc(id).delete();
+                    closeModal('modal-confirm');
+                };
+                openModal('modal-confirm');
+            });
         }
 
         async function dbSaveExpense() {
             const desc = document.getElementById('ex-desc').value;
             const amount = parseFloat(document.getElementById('ex-amount').value);
-            if(!desc || isNaN(amount)) return;
+            if(!desc || isNaN(amount)) return alert("Completa los datos");
             const included = Array.from(document.querySelectorAll('.ex-check:checked')).map(c => c.value);
+            if(included.length === 0) return alert("Selecciona participantes");
             const payerId = document.getElementById('ex-payer').value;
             const payerName = currentEvent.participants.find(p => p.id === payerId).name;
-            
-            let expenses = [...(currentEvent.expenses || [])];
+            let newExpenses = [...currentEvent.expenses];
             const data = { id: editingExpenseId || Date.now(), desc, amount, payerId, payerName, includedIds: included, d: Date.now() };
-            
-            if(editingExpenseId) expenses = expenses.map(e => e.id === editingExpenseId ? data : e);
-            else expenses.push(data);
-            
-            await db.collection('events').doc(currentEvent.id).update({ expenses });
+            if(editingExpenseId) newExpenses = newExpenses.map(e => e.id === editingExpenseId ? data : e);
+            else newExpenses.push(data);
+            await db.collection('events').doc(currentEvent.id).update({ expenses: newExpenses });
             closeModal('modal-add-expense');
+        }
+
+        function confirmDeleteExpense(expenseId) {
+            document.getElementById('confirm-msg').innerText = "¿Eliminar este gasto?";
+            document.getElementById('confirm-btn-action').onclick = async () => {
+                const newExpenses = currentEvent.expenses.filter(e => e.id !== expenseId);
+                await db.collection('events').doc(currentEvent.id).update({ expenses: newExpenses });
+                closeModal('modal-confirm');
+                closeModal('modal-add-expense');
+            };
+            openModal('modal-confirm');
+        }
+
+        function calculateBalances() {
+            let b = {};
+            currentEvent.participants.forEach(p => b[p.id] = 0);
+            currentEvent.expenses.forEach(e => {
+                if(b.hasOwnProperty(e.payerId)) b[e.payerId] += e.amount;
+                let share = e.amount / e.includedIds.length;
+                e.includedIds.forEach(id => { if(b.hasOwnProperty(id)) b[id] -= share; });
+            });
+            return b;
+        }
+
+        function getOptimalTransfers() {
+            const bal = calculateBalances();
+            let deudores = [], acreedores = [];
+            for(let id in bal) {
+                let p = currentEvent.participants.find(x => x.id === id);
+                if(bal[id] < -0.01) deudores.push({name: p.name, amt: Math.abs(bal[id])});
+                if(bal[id] > 0.01) acreedores.push({name: p.name, amt: bal[id]});
+            }
+            let res = [];
+            deudores.forEach(d => {
+                acreedores.forEach(a => {
+                    if(d.amt > 0 && a.amt > 0) {
+                        let move = Math.min(d.amt, a.amt);
+                        res.push({from: d.name, to: a.name, amount: move});
+                        d.amt -= move; a.amt -= move;
+                    }
+                });
+            });
+            return res;
+        }
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.getElementById('screen-loading').style.display = 'none';
+        }
+
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        function toggleMenu(id) {
+            const menu = document.getElementById('menu-' + id);
+            const alreadyOpen = menu.style.display === 'flex';
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
+            if(!alreadyOpen) {
+                menu.style.display = 'flex';
+                setTimeout(() => window.onclick = (e) => { if (!e.target.closest('.dropdown-menu')) { document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none'); window.onclick = null; } }, 100);
+            }
         }
 
         function switchTab(t, btn) {
@@ -344,77 +401,122 @@
 
         function renderTab() {
             const area = document.getElementById('tab-area');
-            const ex = currentEvent.expenses || [];
+            area.innerHTML = "";
             if(activeTab === 'gastos') {
-                area.innerHTML = ex.slice().reverse().map(e => `
-                    <div class="card" onclick='openExpenseModal(${JSON.stringify(e)})'>
+                if(currentEvent.expenses.length === 0) { area.innerHTML = `<p style="text-align:center; padding:40px; opacity:0.4;">Sin gastos.</p>`; return; }
+                area.innerHTML = currentEvent.expenses.slice().reverse().map(e => `
+                    <div class="card" onclick='openExpenseModal(${JSON.stringify(e)})' style="border-left:4px solid var(--accent);">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div><b>${e.desc}</b><br><small style="color:var(--muted)">Pagó ${e.payerName}</small></div>
-                            <b style="color:var(--accent)">${fmt.format(e.amount)}</b>
+                            <div><b style="font-size:1.1rem; display:block;">${e.desc}</b><span style="font-size:0.8rem; color:var(--muted);">Pagó ${e.payerName}</span></div>
+                            <div style="display:flex; align-items:center; gap:15px;">
+                                <b style="color:var(--accent); font-size:1.2rem;">${fmt.format(e.amount)}</b>
+                                <button onclick="event.stopPropagation(); toggleMenu('ex-${e.id}')" style="background:none; border:none; color:var(--muted); font-size:1.1rem;"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                                <div id="menu-ex-${e.id}" class="dropdown-menu" style="right:10px;">
+                                    <button class="dropdown-item" onclick='openExpenseModal(${JSON.stringify(e)})'><i class="fa-solid fa-pen-to-square"></i> Editar</button>
+                                    <button class="dropdown-item danger" onclick="confirmDeleteExpense(${e.id})"><i class="fa-solid fa-trash-can"></i> Eliminar</button>
+                                </div>
+                            </div>
                         </div>
                     </div>`).join('');
             } else if(activeTab === 'saldos') {
-                const b = {};
-                currentEvent.participants.forEach(p => b[p.id] = 0);
-                ex.forEach(e => {
-                    b[e.payerId] += e.amount;
-                    const share = e.amount / e.includedIds.length;
-                    e.includedIds.forEach(id => b[id] -= share);
-                });
+                const b = calculateBalances();
                 area.innerHTML = currentEvent.participants.map(p => `
-                    <div class="card">
-                        <div style="display:flex; justify-content:space-between;">
-                            <span>${p.name}</span>
-                            <b style="color:${b[p.id] >= 0 ? 'var(--green)' : 'var(--red)'}">${fmt.format(b[p.id])}</b>
-                        </div>
-                    </div>`).join('');
+                <div class="card"><div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:700;">${p.name}</span><b style="color:${b[p.id] >= 0 ? 'var(--green)' : 'var(--red)'};">${fmt.format(b[p.id])}</b></div></div>`).join('');
+            } else if(activeTab === 'transfer') {
+                const tr = getOptimalTransfers();
+                area.innerHTML = tr.length ? tr.map(t => `<div class="card" style="border-left:4px solid var(--green);"><p><b>${t.from}</b> debe pagar <span style="color:var(--green); font-weight:800;">${fmt.format(t.amount)}</span> a <b>${t.to}</b></p></div>`).join('') : `<div class="card" style="text-align:center; color:var(--green);">✨ ¡CUENTAS AL DÍA!</div>`;
+            } else if(activeTab === 'historial') {
+                area.innerHTML = currentEvent.logs.slice().reverse().map(l => `<div style="font-size:0.85rem; padding:10px; border-bottom:1px solid var(--border); color:var(--muted);"><b>${l.u}</b> ${l.a} <small>${new Date(l.d).toLocaleTimeString()}</small></div>`).join('');
             }
         }
 
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            document.getElementById('screen-loading').style.display = 'none';
+        function openEvent(id) {
+            db.collection('events').doc(id).onSnapshot(doc => {
+                if(!doc.exists) return;
+                currentEvent = {id: doc.id, ...doc.data()};
+                document.getElementById('det-title').innerText = currentEvent.name;
+                renderTab();
+                showScreen('screen-detail');
+            });
         }
-        function openModal(id) { document.getElementById(id).classList.add('active'); }
-        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
         
         function openModalCreate() {
             editingEventId = null;
+            document.getElementById('event-modal-title').innerText = "Nuevo Evento";
+            document.getElementById('ev-name').value = "";
             tempParticipants = [{id: auth.currentUser.uid, name: auth.currentUser.displayName}];
             renderSetupParts();
             openModal('modal-event');
         }
+
         function renderSetupParts() {
             document.getElementById('setup-parts-list').innerHTML = tempParticipants.map((p, i) => `
-                <div class="card" style="margin-bottom:8px; padding:12px; display:flex; justify-content:space-between;">
-                    ${p.name} ${p.id !== auth.currentUser.uid ? `<i class="fa-solid fa-xmark" onclick="tempParticipants.splice(${i},1);renderSetupParts()"></i>` : ''}
+                <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface2); padding:16px; border-radius:18px; border:1px solid var(--border);">
+                    <span style="font-weight:700;">${p.name}</span>
+                    ${p.id !== auth.currentUser.uid ? `<button onclick="tempParticipants.splice(${i},1);renderSetupParts()" style="background:none; border:none; color:var(--red); font-size:1.2rem;"><i class="fa-solid fa-circle-xmark"></i></button>` : `<small style="color:var(--accent)">Tú</small>`}
                 </div>`).join('');
         }
+
         function addPartToSetup() {
-            const name = document.getElementById('ev-part-name').value;
-            if(!name) return;
-            tempParticipants.push({id: 't_'+Date.now(), name});
-            document.getElementById('ev-part-name').value = '';
-            renderSetupParts();
+            const inp = document.getElementById('ev-part-name');
+            if(!inp.value.trim()) return;
+            tempParticipants.push({id: 't_' + Date.now(), name: inp.value.trim()});
+            inp.value = ''; renderSetupParts();
         }
-        function openExpenseModal(e = null) {
-            editingExpenseId = e ? e.id : null;
-            document.getElementById('ex-payer').innerHTML = currentEvent.participants.map(p => `<option value="${p.id}" ${e && e.payerId==p.id?'selected':''}>${p.name}</option>`).join('');
+
+        function openExpenseModal(expense = null) {
+            editingExpenseId = expense ? expense.id : null;
+            document.getElementById('expense-modal-title').innerText = expense ? "Editar Gasto" : "Nuevo Gasto";
+            document.getElementById('ex-desc').value = expense ? expense.desc : "";
+            document.getElementById('ex-amount').value = expense ? expense.amount : "";
+            document.getElementById('btn-delete-expense').style.display = expense ? "block" : "none";
+            document.getElementById('ex-payer').innerHTML = currentEvent.participants.map(p => `<option value="${p.id}" ${expense && expense.payerId === p.id ? 'selected' : ''}>${p.name}</option>`).join('');
             document.getElementById('ex-list-checks').innerHTML = currentEvent.participants.map(p => `
-                <div style="display:flex; justify-content:space-between; padding:10px;">
-                    ${p.name} <input type="checkbox" value="${p.id}" class="ex-check" ${!e || e.includedIds.includes(p.id)?'checked':''}>
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:16px; background:var(--surface2); border-radius:16px; margin-bottom:8px;">
+                    <span style="font-weight:600;">${p.name}</span>
+                    <input type="checkbox" value="${p.id}" class="ex-check" style="width:22px; height:22px;" ${!expense || expense.includedIds.includes(p.id) ? 'checked' : ''}>
                 </div>`).join('');
             openModal('modal-add-expense');
         }
-        function toggleMenu(id) {
-            const m = document.getElementById('menu-'+id);
-            m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
+
+        function openModalParticipants() {
+            const list = document.getElementById('manage-parts-list');
+            list.innerHTML = currentEvent.participants.map(p => `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface2); padding:16px; border-radius:18px; border:1px solid var(--border);">
+                    <span style="font-weight:700;">${p.name}</span>
+                </div>`).join('');
+            openModal('modal-manage-participants');
         }
+
         function shareEvent() {
             const url = window.location.origin + window.location.pathname + "?join=" + currentEvent.id;
             if(navigator.share) navigator.share({title: "Unite a " + currentEvent.name, url});
-            else prompt("Copia link:", url);
+            else prompt("Copia este link:", url);
+        }
+
+        function startEditEvent(id) {
+            db.collection('events').doc(id).get().then(doc => {
+                const d = doc.data();
+                editingEventId = id;
+                document.getElementById('ev-name').value = d.name;
+                document.getElementById('ev-date').value = d.date;
+                tempParticipants = d.participants;
+                renderSetupParts();
+                openModal('modal-event');
+            });
+        }
+
+        async function addNewParticipantDirect() {
+            const name = document.getElementById('add-new-part-name').value;
+            if(!name.trim()) return;
+            const newP = { id: 't_' + Date.now(), name: name.trim() };
+            await db.collection('events').doc(currentEvent.id).update({
+                participants: firebase.firestore.FieldValue.arrayUnion(newP),
+                participantsIds: firebase.firestore.FieldValue.arrayUnion(newP.id)
+            });
+            document.getElementById('add-new-part-name').value = "";
+            openModalParticipants(); // Refresca la lista visual
         }
     </script>
 </body>
